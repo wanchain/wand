@@ -517,6 +517,8 @@ class DApp extends Component {
             nodeintegration="on"
             preload={preload}
             allowpopups="on"
+            webpreferences="allowRunningInsecureContent, contextIsolation=0"
+            disablewebsecurity="true"
           >
             Your electron doesn't support webview, please set webviewTag: true.
           </webview>
