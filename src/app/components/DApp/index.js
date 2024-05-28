@@ -219,7 +219,7 @@ class DApp extends Component {
 
   toHexString(value) {
     if (typeof value === 'string') {
-      return value.startsWith('0x') ? value : `0x${Number(value).toString(16)}`;
+      return value.startsWith('0x') ? value : `0x${new BigNumber(value).toString(16)}`;
     } else {
       return `0x${value.toString(16)}`;
     }
@@ -266,7 +266,7 @@ class DApp extends Component {
       let rawTx = {};
       rawTx.from = msg.message.from;
       rawTx.to = msg.message.to;
-      rawTx.value = amountWei ? '0x' + Number(amountWei).toString(16) : '0x00';
+      rawTx.value = amountWei ? '0x' + new BigNumber(amountWei).toString(16) : '0x00';
       rawTx.data = data;
       rawTx.nonce = '0x' + nonce.toString(16);
       rawTx.gasLimit = msg.message.gasLimit ? this.toHexString(msg.message.gasLimit) : `0x${(2000000).toString(16)}`;
@@ -293,7 +293,7 @@ class DApp extends Component {
     let rawTx = {};
     rawTx.from = msg.message.from;
     rawTx.to = msg.message.to;
-    rawTx.value = amountWei ? '0x' + Number(amountWei).toString(16) : '0x00';
+    rawTx.value = amountWei ? '0x' + new BigNumber(amountWei).toString(16) : '0x00';
     rawTx.data = data;
     rawTx.nonce = '0x' + nonce.toString(16);
     rawTx.gasLimit = msg.message.gasLimit ? this.toHexString(msg.message.gasLimit) : `0x${(2000000).toString(16)}`;
@@ -324,7 +324,7 @@ class DApp extends Component {
       let rawTx = {};
       rawTx.from = msg.message.from;
       rawTx.to = msg.message.to;
-      rawTx.value = amountWei ? '0x' + Number(amountWei).toString(16) : '0x00';
+      rawTx.value = amountWei ? '0x' + new BigNumber(amountWei).toString(16) : '0x00';
       rawTx.data = data;
       rawTx.nonce = '0x' + nonce.toString(16);
       rawTx.gasLimit = msg.message.gasLimit ? this.toHexString(msg.message.gasLimit) : `0x${(2000000).toString(16)}`;
