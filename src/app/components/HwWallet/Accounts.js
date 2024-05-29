@@ -4,7 +4,7 @@ import { observer, inject } from 'mobx-react';
 import intl from 'react-intl-universal';
 import BigNumber from 'bignumber.js';
 import { formatNum } from 'utils/support';
-import { hasSameName } from 'utils/helper';
+import { hasSameName, fillRawTxGasPrice } from 'utils/helper';
 import TransHistory from 'components/TransHistory';
 import CopyAndQrcode from 'components/CopyAndQrcode';
 import SendNormalTrans from 'components/SendNormalTrans';
@@ -72,8 +72,7 @@ class Accounts extends Component {
 
   handleSend = from => {
     let params = this.props.transParams[from];
-    let { to, amount, data, chainId, nonce, gasLimit, gasPrice, txType } = params;
-
+    let { to, amount, data, chainId, nonce, gasLimit, gasPrice, baseFeePerGas } = params;
     let rawTx = {
       from,
       to,
@@ -82,9 +81,9 @@ class Accounts extends Component {
       chainId: chainId,
       nonce: '0x' + nonce.toString(16),
       gasLimit: '0x' + gasLimit.toString(16),
-      gasPrice: '0x' + new BigNumber(gasPrice).times(BigNumber(10).pow(9)).toString(16),
-      Txtype: txType
     }
+    fillRawTxGasPrice(params, rawTx, true);
+    console.log('HwWallet Account handleSend rawTx: %s', JSON.stringify(rawTx))
     return new Promise((resolve, reject) => {
       this.props.signTransaction(params.path, rawTx, (_err, raw) => {
         wand.request('transaction_raw', { raw, chainType: 'WAN' }, (err, txHash) => {

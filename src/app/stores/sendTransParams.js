@@ -65,11 +65,21 @@ class SendTransParams {
 
   @action updateXRPTransParams(paramsObj) {
     Object.keys(paramsObj).forEach(item => {
-      self.XRPTransParams[item] = paramsObj[item];
+      let value = paramsObj[item];
+      if ((item === 'gasPrice') && (typeof (value) === 'object')) {
+        self.XRPTransParams.gasPrice = value.gasPrice;
+        self.XRPTransParams.baseFeePerGas = value.baseFeePerGas;
+      } else {
+        self.XRPTransParams[item] = value;
+      }
     });
   }
 
   @action updateGasPrice(gasPrice, chainType = 'WAN') {
+    if (typeof (gasPrice) === 'object') {
+      self.baseFeePerGas = gasPrice.baseFeePerGas;
+      gasPrice = gasPrice.gasPrice;
+    }
     self.currentGasPrice = gasPrice;
     if (chainType === 'WAN') {
       self.minGasPrice = 1;
@@ -86,7 +96,13 @@ class SendTransParams {
 
   @action updateTransParams(addr, paramsObj) {
     Object.keys(paramsObj).forEach(item => {
-      self.transParams[addr][item] = paramsObj[item];
+      let value = paramsObj[item];
+      if ((item === 'gasPrice') && (typeof (value) === 'object')) {
+        self.transParams[addr].gasPrice = value.gasPrice;
+        self.transParams[addr].baseFeePerGas = value.baseFeePerGas;
+      } else {
+        self.transParams[addr][item] = value;
+      }
     });
   }
 
@@ -109,6 +125,7 @@ class SendTransParams {
   }
 
   @computed get rawTx() {
+    console.log('call sendTransParams rawTx')
     if (Object.keys(self.transParams).length !== 0) {
       let from = self.currentFrom;
       let { to, amount, data, chainId, nonce, gasLimit, gasPrice, txType } = self.transParams[from];

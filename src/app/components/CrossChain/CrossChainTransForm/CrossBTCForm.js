@@ -430,6 +430,7 @@ class CrossBTCForm extends Component {
         } : toAddress,
         amount: value,
         gasPrice: transParams[this.props.from].gasPrice,
+        baseFeePerGas: transParams[this.props.from].baseFeePerGas,
         gasLimit: transParams[this.props.from].gasLimit,
         storeman: transParams[this.props.from].storeman,
         tokenPairID,

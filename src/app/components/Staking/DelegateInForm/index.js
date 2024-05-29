@@ -7,7 +7,7 @@ import { WANMAIN, WANTESTNET, WALLETID } from 'utils/settings'
 import StakeConfirmForm from 'components/Staking/StakeConfirmForm';
 import { toWei } from 'utils/support.js';
 import { BigNumber } from 'bignumber.js';
-import { getNonce, getGasPrice, checkAmountUnit, getChainId, getContractAddr, getContractData, checkWanValidatorAddr } from 'utils/helper';
+import { getNonce, getGasInfo, checkAmountUnit, getChainId, getContractAddr, getContractData, checkWanValidatorAddr, fillRawTxGasPrice } from 'utils/helper';
 import { signTransaction } from 'componentUtils/trezor'
 
 const Option = Select.Option;
@@ -368,7 +368,7 @@ class DelegateInForm extends Component {
     let func = 'delegateIn';
     try {
       let nonce = await getNonce(from, 'wan');
-      let gasPrice = await getGasPrice('wan');
+      let gasInfo = await getGasInfo('wan');
       let data = await getContractData(func, validator);
       let amountWei = toWei(value);
       const cscContractAddr = await getContractAddr();
@@ -379,8 +379,7 @@ class DelegateInForm extends Component {
       rawTx.data = data;
       rawTx.nonce = '0x' + nonce.toString(16);
       rawTx.gasLimit = '0x' + Number(200000).toString(16);
-      rawTx.gasPrice = toWei(gasPrice, 'gwei');
-      rawTx.Txtype = Number(1);
+      fillRawTxGasPrice(gasInfo, rawTx, true);
       rawTx.chainId = chainId;
 
       let raw = await pu.promisefy(signTransaction, [path, rawTx], this);

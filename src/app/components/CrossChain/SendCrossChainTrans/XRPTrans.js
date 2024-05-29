@@ -43,6 +43,7 @@ const XRPTrans = observer(({ record, type }) => {
     } else {
       input.amount = XRPCrossTransParams.value;
       input.gasPrice = XRPCrossTransParams.gasPrice;
+      input.baseFeePerGas = XRPCrossTransParams.baseFeePerGas;
       input.gasLimit = XRPCrossTransParams.gasLimit;
       input.networkFee = new BigNumber(XRPCrossTransParams.networkFee).multipliedBy(Math.pow(10, 18));
     }

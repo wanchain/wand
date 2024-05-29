@@ -207,13 +207,15 @@ class WanAccount extends Component {
       path: params.path,
       gasLimit: `0x${params.gasLimit.toString(16)}`,
       gasPrice: params.gasPrice,
+      baseFeePerGas: params.baseFeePerGas,
       to: params.to,
       amount: params.amount,
       symbol: CHAINTYPE,
       nonce: params.nonce,
       data: params.data,
+      type: 2
     };
-
+    console.log('wan onSendNormalTransaction: %O', trans)
     return new Promise((resolve, reject) => {
       wand.request('transaction_normal', trans, (err, txHash) => {
         if (err) {
@@ -245,6 +247,7 @@ class WanAccount extends Component {
       path: params.path,
       gasLimit: `0x${params.gasLimit.toString(16)}`,
       gasPrice: params.gasPrice,
+      baseFeePerGas: params.baseFeePerGas,
       to: toChecksumOTAddress(params.to),
       amount: splitAmount,
     };

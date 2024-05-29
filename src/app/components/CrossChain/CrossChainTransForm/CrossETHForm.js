@@ -25,6 +25,7 @@ const ChooseContactsModalForm = Form.create({ name: 'AddContactsModal' })(Choose
 
 @inject(stores => ({
   settings: stores.session.settings,
+  isLegacyWanPath: stores.session.isLegacyWanPath,
   addrInfo: stores.ethAddress.addrInfo,
   language: stores.languageIntl.language,
   wanAddrInfo: stores.wanAddress.addrInfo,
@@ -214,9 +215,15 @@ class CrossETHForm extends Component {
         const contactItem = contactsList.find(v => v.name === to || v.address === to);
         to = contactItem.address;
       }
-      let toPath = (type === INBOUND ? info.toChainID : info.fromChainID) - Number('0x80000000'.toString(10));
-      toPath = isNativeAccount
-                               ? addrType === 'normal' ? `m/44'/${toPath}'/0'/0/${toAddrInfo[addrType][to].path}` : toAddrInfo[addrType][to].path
+      let chainID;
+      let chainSymbol = (type === INBOUND ? info.toChainSymbol : info.fromChainSymbol);
+      if (chainSymbol === 'WAN') {
+        chainID = this.props.isLegacyWanPath ? 5718350 : 60;
+      } else {
+        chainID = (type === INBOUND ? info.toChainID : info.fromChainID) - Number('0x80000000'.toString(10));
+      }
+      let toPath = isNativeAccount
+                               ? addrType === 'normal' ? `m/44'/${chainID}'/0'/0/${toAddrInfo[addrType][to].path}` : toAddrInfo[addrType][to].path
                                : undefined;
 
       let walletID = addrType === 'normal' ? 1 : WALLETID[addrType.toUpperCase()];
@@ -540,7 +547,7 @@ class CrossETHForm extends Component {
       operationFeeUnit = 'ETH';
       networkFeeUnit = 'WAN';
     }
-    gasFee = advanced ? advancedFee : new BigNumber(gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10);
+    gasFee = advanced ? advancedFee : new BigNumber(gasPrice.gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10);
     this.accountSelections = this.addressSelections.map(val => getValueByAddrInfo(val, 'name', toAccountList));
     this.accountDataSelections = this.addressSelections.map(val => {
       const name = getValueByAddrInfo(val, 'name', toAccountList);

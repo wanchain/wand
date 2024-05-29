@@ -97,10 +97,11 @@ class EthAccount extends Component {
       amount: params.amount,
       gasLimit: `0x${params.gasLimit.toString(16)}`,
       gasPrice: params.gasPrice,
+      baseFeePerGas: params.baseFeePerGas,
       nonce: params.nonce,
       data: params.data
     };
-
+    console.log('EthAccount handleSend trans: %O', trans)
     return new Promise((resolve, reject) => {
       wand.request('transaction_normal', trans, function (err, txHash) {
         if (err) {

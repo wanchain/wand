@@ -13,7 +13,7 @@ import CommonFormItem from 'componentUtils/CommonFormItem';
 import AddrSelectForm from 'componentUtils/AddrSelectForm';
 import DelegationConfirmForm from './DelegationConfirmForm';
 import style from 'components/Staking/DelegateInForm/index.less';
-import { checkAmountUnit, getValueByAddrInfo } from 'utils/helper';
+import { checkAmountUnit, getValueByAddrInfo, fillRawTxGasPrice } from 'utils/helper';
 
 const colSpan = 6;
 const ACTION = 'delegateIn';
@@ -242,14 +242,13 @@ class OsmDelegateInForm extends Component {
       let rawTx = {
         from,
         chainId: Number(estimateData.chainId),
-        Txtype: 1,
         to: estimateData.to,
         value: estimateData.value,
         data: estimateData.data,
         nonce: '0x' + estimateData.nonce.toString(16),
-        gasPrice: '0x' + Number(estimateData.gasPrice).toString(16),
         gasLimit: '0x' + Number(new BigNumber(estimateData.gasLimit).multipliedBy(1.6).toString(10)).toString(16),
       };
+      fillRawTxGasPrice(estimateData, rawTx);
       let raw = await pu.promisefy(signTransaction, [BIP44Path, rawTx], this);// Trezor sign
       let txHash = await pu.promisefy(wand.request, ['transaction_raw', { raw, chainType: 'WAN' }], this);
       let params = {

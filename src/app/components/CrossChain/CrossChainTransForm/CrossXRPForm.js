@@ -46,7 +46,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
 
   const { status: fetchQuotaStatus, value: quotaList, execute: executeGetQuota } = useAsync('crossChain_getQuota', [{}], false);
   const { status: fetchFeeStatus, value: estimatedFee, execute: executeEstimatedFee } = useAsync('crossChain_estimatedXrpFee', '0', false);
-  const { status: fetchGasPrice, value: gasPrice } = useAsync('query_getGasPrice', '0', type === OUTBOUND, { chainType: toChainSymbol });
+  const { status: fetchGasPrice, value: gasPrice } = useAsync('query_getGasInfo', '0', type === OUTBOUND, { chainType: toChainSymbol });
   const { value: getAllBalances } = useAsync('address_getAllBalances', [{ currency: 'XRP', value: [] }], type === INBOUND, { chainType: type === INBOUND ? fromChainSymbol : toChainSymbol, address });
 
   const info = type === INBOUND ? {
@@ -106,7 +106,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
     if (type === INBOUND) {
       tmp = estimatedFee;
     } else {
-      tmp = new BigNumber(gasPrice).div(BigNumber(10).pow(9)).times(XRPCrossTransParams.gasLimit).div(BigNumber(10).pow(9)).toString(10);
+      tmp = new BigNumber(gasPrice.gasPrice).div(BigNumber(10).pow(9)).times(XRPCrossTransParams.gasLimit).div(BigNumber(10).pow(9)).toString(10);
     }
     return tmp;
   }, [estimatedFee, gasPrice, XRPCrossTransParams.gasLimit])
@@ -144,7 +144,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   }, [quotaList])
 
   useEffect(() => {
-    updateXRPTransParams({ gasPrice: fromWei(gasPrice, 'gwei') })
+    updateXRPTransParams({ gasPrice })
   }, [gasPrice])
 
   useEffect(() => {

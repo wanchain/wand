@@ -101,7 +101,13 @@ class SendCrossChainParams {
 
   @action updateTransParams(addr, paramsObj) {
     Object.keys(paramsObj).forEach(item => {
-      self.transParams[addr][item] = paramsObj[item];
+      let value = paramsObj[item];
+      if ((item === 'gasPrice') && (typeof (value) === 'object')) {
+        self.transParams[addr].gasPrice = value.gasPrice;
+        self.transParams[addr].baseFeePerGas = value.baseFeePerGas;
+      } else {
+        self.transParams[addr][item] = value;
+      }
     });
   }
 

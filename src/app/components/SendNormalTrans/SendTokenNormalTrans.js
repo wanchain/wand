@@ -4,7 +4,7 @@ import { observer, inject } from 'mobx-react';
 import intl from 'react-intl-universal';
 import { TRANSTYPE } from 'utils/settings';
 import TokenNormalTransForm from 'components/NormalTransForm/TokenNormalTransForm';
-import { getNonce, getGasPrice, getBalanceByAddr } from 'utils/helper';
+import { getNonce, getGasInfo, getBalanceByAddr } from 'utils/helper';
 
 const TokenCollectionCreateForm = Form.create({ name: 'TokenNormalTransForm' })(TokenNormalTransForm);
 
@@ -50,7 +50,7 @@ class SendTokenNormalTrans extends Component {
     this.setState({ visible: true });
     addTransTemplate(from, { chainType, chainId });
     try {
-      let [nonce, gasPrice] = await Promise.all([getNonce(from, chainType), getGasPrice(chainType)]);
+      let [nonce, gasPrice] = await Promise.all([getNonce(from, chainType), getGasInfo(chainType)]);
       updateTransParams(from, { path, nonce, gasPrice });
       updateGasPrice(gasPrice, chainType);
       setTimeout(() => { this.setState({ spin: false }) }, 0)

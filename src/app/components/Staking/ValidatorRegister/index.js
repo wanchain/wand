@@ -2,12 +2,11 @@ import intl from 'react-intl-universal';
 import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
-import { checkAmountUnit, getValueByAddrInfo, checkMaxFeeRate, getNonce, getGasPrice, getChainId, getContractAddr, getContractData } from 'utils/helper';
+import { checkAmountUnit, getValueByAddrInfo, checkMaxFeeRate, getNonce, getGasInfo, getChainId, getContractAddr, getContractData, fillRawTxGasPrice } from 'utils/helper';
 import { isNumber } from 'utils/support';
 import { Button, Modal, Form, Icon, message, Row, Col, Slider, Radio } from 'antd';
 import { signTransaction } from 'componentUtils/trezor';
 import { toWei } from 'utils/support.js';
-
 import style from './index.less';
 import PwdForm from 'componentUtils/PwdForm';
 import CommonFormItem from 'componentUtils/CommonFormItem';
@@ -177,7 +176,7 @@ class ValidatorRegister extends Component {
     let func = 'stakeRegister';// abi function
     try {
       let nonce = await getNonce(from, 'wan');
-      let gasPrice = await getGasPrice('wan');
+      let gasInfo = await getGasInfo('wan');
       let data = await getContractData(func, secPk, bn256Pk, lockEpochs, feeRate, maxFeeRate);
 
       let amountWei = toWei(value);
@@ -189,8 +188,7 @@ class ValidatorRegister extends Component {
       rawTx.data = data;
       rawTx.nonce = '0x' + nonce.toString(16);
       rawTx.gasLimit = '0x' + Number(200000).toString(16);
-      rawTx.gasPrice = toWei(gasPrice, 'gwei');
-      rawTx.Txtype = Number(1);
+      fillRawTxGasPrice(gasInfo, rawTx, true);
       rawTx.chainId = chainId;
       let raw = await pu.promisefy(signTransaction, [path, rawTx], this);// Trezor sign
 

@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
-import { getReadyOpenStoremanGroupList, getGasPrice, estimateSmartFee } from 'utils/helper';
+import { getReadyOpenStoremanGroupList, getGasInfo, estimateSmartFee } from 'utils/helper';
 import { INBOUND, OUTBOUND, FAST_GAS } from 'utils/settings';
 import CrossBTCForm from 'components/CrossChain/CrossChainTransForm/CrossBTCForm';
 
@@ -55,8 +55,8 @@ class BTCTrans extends Component {
           storeman: smgId,
         });
       } else {
-        let gasPrice = await getGasPrice(info.toChainSymbol);
-        estimateFee = new BigNumber(gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10);
+        let gasPrice = await getGasInfo(info.toChainSymbol);
+        estimateFee = new BigNumber(gasPrice.gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10);
         updateTransParams(from, {
           gasPrice,
           gasLimit: FAST_GAS,

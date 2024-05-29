@@ -97,6 +97,7 @@ class CrossChain extends Component {
       to: transParams.to,
       amount: transParams.amount,
       gasPrice: transParams.gasPrice,
+      baseFeePerGas: transParams.baseFeePerGas,
       gasLimit: transParams.gasLimit,
       storeman: transParams.storeman,
       crosschainFee: transParams.crosschainFee,
@@ -106,7 +107,6 @@ class CrossChain extends Component {
       amountUnit: new BigNumber(transParams.amount).multipliedBy(Math.pow(10, info.ancestorDecimals)).toString(10),
       networkFee: new BigNumber(transParams.networkFee).multipliedBy(Math.pow(10, 18)).toString(10)
     };
-
     return new Promise((resolve, reject) => {
       if (input.from.walletID === 2) {
         message.info(intl.get('Ledger.signTransactionInLedger'))
@@ -153,6 +153,7 @@ class CrossChain extends Component {
       to: transParams.to,
       amount: transParams.amount,
       gasPrice: transParams.gasPrice,
+      baseFeePerGas: transParams.baseFeePerGas,
       gasLimit: transParams.gasLimit,
       storeman: transParams.storeman,
       crosschainFee: transParams.crosschainFee,

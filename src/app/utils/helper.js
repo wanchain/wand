@@ -258,6 +258,19 @@ export const getGasPrice = function (chainType) {
   })
 };
 
+export const getGasInfo = function (chainType) {
+  return new Promise((resolve, reject) => {
+    wand.request('query_getGasInfo', { chainType: chainType }, (err, val) => {
+      if (err) {
+        console.log('Failed to get gas price ', err);
+        return reject(err)
+      } else {
+        return resolve(val);
+      }
+    })
+  })
+};
+
 export const getSmgList = function (crossChain, tokenAddr) {
   return new Promise((resolve, reject) => {
     wand.request('crossChain_getSmgList', { crossChain, tokenAddr }, (err, val) => {
@@ -1457,4 +1470,33 @@ export const getHashKey = (key) => {
   h.update(kBuf);
   let hashKey = h.digest('hex');
   return hashKey;
+}
+
+export const fillRawTxGasPrice = (input, rawTx, isGwei = false) => {
+  let legacyGasPrice = new BigNumber(input.gasPrice);
+  if (isGwei) {
+    legacyGasPrice = legacyGasPrice.times(10 ** 9);
+  }
+  rawTx.gasPrice = '0x' + legacyGasPrice.toString(16);
+  if (input.maxPriorityFeePerGas && (input.maxFeePerGas)) { // already filled by sdk
+    rawTx.maxPriorityFeePerGas = '0x' + new BigNumber(input.maxPriorityFeePerGas).toString(16);
+    rawTx.maxFeePerGas = '0x' + new BigNumber(input.maxFeePerGas).toString(16);
+    rawTx.type = '0x02';
+  } else if (input.baseFeePerGas && (input.baseFeePerGas > 0)) {
+    let baseFeePerGas = new BigNumber(input.baseFeePerGas);
+    if (isGwei) {
+      baseFeePerGas = baseFeePerGas.times(10 ** 9);
+    }
+    let maxPriorityFeePerGas = legacyGasPrice.minus(baseFeePerGas);
+    if (maxPriorityFeePerGas.gt(0)) {
+      rawTx.maxPriorityFeePerGas = '0x' + maxPriorityFeePerGas.toString(16);
+      rawTx.maxFeePerGas = '0x' + new BigNumber(legacyGasPrice.times(1.2).toFixed(0)).toString(16);
+      rawTx.type = '0x02';
+    } else if (maxPriorityFeePerGas.eq(0)) {
+      rawTx.maxPriorityFeePerGas = '0x' + legacyGasPrice.toString(16);
+      rawTx.maxFeePerGas = '0x' + new BigNumber(legacyGasPrice.times(1.2).plus(legacyGasPrice).toFixed(0)).toString(16);
+      rawTx.type = '0x02';
+    }
+  }
+  console.log('fillRawTxGasPrice input: %O, rawTx: %O', input, rawTx);
 }

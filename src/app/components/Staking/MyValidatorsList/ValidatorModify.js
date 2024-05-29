@@ -2,10 +2,9 @@ import intl from 'react-intl-universal';
 import React, { Component } from 'react';
 import { observer, inject } from 'mobx-react';
 import { Button, Modal, Form, Icon, message, Row, Col, Slider } from 'antd';
-import { getContractData, getContractAddr, getNonce, getGasPrice, getChainId } from 'utils/helper';
+import { getContractData, getContractAddr, getNonce, getGasInfo, getChainId, fillRawTxGasPrice } from 'utils/helper';
 import { signTransaction } from 'componentUtils/trezor';
 import { toWei } from 'utils/support.js';
-
 import style from './index.less';
 import PwdForm from 'componentUtils/PwdForm';
 import CommonFormItem from 'componentUtils/CommonFormItem';
@@ -150,7 +149,7 @@ class ModifyForm extends Component {
     let chainId = await getChainId();
     try {
       let nonce = await getNonce(from, 'wan');
-      let gasPrice = await getGasPrice('wan');
+      let gasInfo = await getGasInfo('wan');
       let address = record.validator.address;
       let data = await getContractData(func, address, value);
       let amountWei = toWei('0');
@@ -162,8 +161,7 @@ class ModifyForm extends Component {
       rawTx.data = data;
       rawTx.nonce = '0x' + nonce.toString(16);
       rawTx.gasLimit = '0x' + Number(200000).toString(16);
-      rawTx.gasPrice = toWei(gasPrice, 'gwei');
-      rawTx.Txtype = Number(1);
+      fillRawTxGasPrice(gasInfo, rawTx, true);
       rawTx.chainId = chainId;
       let raw = await pu.promisefy(signTransaction, [path, rawTx], this);// Trezor sign
 

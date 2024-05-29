@@ -7,7 +7,7 @@ import { signTransaction } from 'componentUtils/trezor'
 import style from './index.less';
 import DelegateOutConfirmForm from '../DelegateOutConfirmForm';
 import { toWei } from 'utils/support.js';
-import { getNonce, getGasPrice, getContractAddr, getContractData, getChainId } from 'utils/helper';
+import { getNonce, getGasInfo, getContractAddr, getContractData, getChainId, fillRawTxGasPrice } from 'utils/helper';
 
 const pu = require('promisefy-util');
 const DelegateOutForm = Form.create({ name: 'DelegateOutConfirmForm' })(DelegateOutConfirmForm);
@@ -104,7 +104,7 @@ class DelegateOut extends Component {
   trezorDelegateOut = async (path, from, validator, value, stakeAmount) => {
     let func = 'delegateOut';
     try {
-      let [chainId, nonce, gasPrice, data] = await Promise.all([getChainId(), getNonce(from, 'wan'), getGasPrice('wan'), getContractData(func, validator)]);
+      let [chainId, nonce, gasInfo, data] = await Promise.all([getChainId(), getNonce(from, 'wan'), getGasInfo('wan'), getContractData(func, validator)]);
       let amountWei = toWei(value);
       const cscContractAddr = await getContractAddr();
       let rawTx = {};
@@ -114,8 +114,7 @@ class DelegateOut extends Component {
       rawTx.data = data;
       rawTx.nonce = '0x' + nonce.toString(16);
       rawTx.gasLimit = '0x' + Number(200000).toString(16);
-      rawTx.gasPrice = toWei(gasPrice, 'gwei');
-      rawTx.Txtype = Number(1);
+      fillRawTxGasPrice(gasInfo, rawTx, true);
       rawTx.chainId = chainId;
 
       let raw = await pu.promisefy(signTransaction, [path, rawTx], this);

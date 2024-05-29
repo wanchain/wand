@@ -24,7 +24,7 @@ class Offline extends Component {
   state = {
     raw: '',
     addr: '',
-    gasPrice: null,
+    gasPrice: {},
     nonce: null,
     confirmVisible: false,
     loading: false,
@@ -67,7 +67,7 @@ class Offline extends Component {
     if (e.target.value === '') {
       this.setState({
         addr: '',
-        gasPrice: null,
+        gasPrice: {},
         nonce: null
       })
     } else {

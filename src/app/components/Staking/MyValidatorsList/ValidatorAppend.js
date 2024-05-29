@@ -3,7 +3,7 @@ import intl from 'react-intl-universal';
 import React, { Component } from 'react';
 import { observer, inject } from 'mobx-react';
 import { Button, Modal, Form, Icon, message } from 'antd';
-import { checkAmountUnit, getContractData, getContractAddr, getNonce, getGasPrice, getChainId } from 'utils/helper';
+import { checkAmountUnit, getContractData, getContractAddr, getNonce, getGasInfo, getChainId, fillRawTxGasPrice } from 'utils/helper';
 import { signTransaction } from 'componentUtils/trezor';
 import { toWei } from 'utils/support.js';
 
@@ -122,7 +122,7 @@ class InForm extends Component {
     let func = 'stakeAppend';// abi function
     try {
       let nonce = await getNonce(from, 'wan');
-      let gasPrice = await getGasPrice('wan');
+      let gasInfo = await getGasInfo('wan');
       let address = this.props.record.validator.address;
       let data = await getContractData(func, address);
       let amountWei = toWei(value);
@@ -134,8 +134,7 @@ class InForm extends Component {
       rawTx.data = data;
       rawTx.nonce = '0x' + nonce.toString(16);
       rawTx.gasLimit = '0x' + Number(200000).toString(16);
-      rawTx.gasPrice = toWei(gasPrice, 'gwei');
-      rawTx.Txtype = Number(1);
+      fillRawTxGasPrice(gasInfo, rawTx, true);
       rawTx.chainId = chainId;
       let raw = await pu.promisefy(signTransaction, [path, rawTx], this);// Trezor sign
 

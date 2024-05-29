@@ -96,6 +96,7 @@ class BnbAccount extends Component {
       amount: params.amount,
       gasLimit: `0x${params.gasLimit.toString(16)}`,
       gasPrice: params.gasPrice,
+      baseFeePerGas: params.baseFeePerGas,
       nonce: params.nonce,
       data: params.data
     };

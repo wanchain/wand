@@ -25,6 +25,7 @@ const ChooseContactsModalForm = Form.create({ name: 'AddContactsModal' })(Choose
 
 @inject(stores => ({
   settings: stores.session.settings,
+  isLegacyWanPath: stores.session.isLegacyWanPath,
   language: stores.languageIntl.language,
   from: stores.sendCrossChainParams.currentFrom,
   currTokenPairId: stores.crossChain.currTokenPairId,
@@ -212,16 +213,21 @@ class CrossChainTransForm extends Component {
       if (type === INBOUND) {
         if (info.toChainSymbol === 'BNB') { // BNB coin type id is the same with ETH, both are 60.
           toPath = 60;
+        } else if (info.toChainSymbol === 'WAN') {
+          toPath = this.props.isLegacyWanPath ? 5718350 : 60;
         } else {
           toPath = info.toChainID - Number('0x80000000'.toString(10));
         }
       } else {
         if (info.fromChainSymbol === 'BNB') {
           toPath = 60;
+        } else if (info.fromChainSymbol === 'WAN') {
+          toPath = this.props.isLegacyWanPath ? 5718350 : 60;
         } else {
           toPath = info.fromChainID - Number('0x80000000'.toString(10));
         }
       }
+      console.log('toAddrInfo: %O', JSON.stringify(toAddrInfo))
       toPath = isNativeAccount
                               ? addrType === 'normal' ? `m/44'/${toPath}'/0'/0/${toAddrInfo[addrType][to].path}` : toAddrInfo[addrType][to].path
                               : undefined;
@@ -567,7 +573,7 @@ class CrossChainTransForm extends Component {
         text: `${name}-${val}`
       }
     })
-    gasFee = advanced ? advancedFee : new BigNumber(gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10);
+    gasFee = advanced ? advancedFee : new BigNumber(gasPrice && gasPrice.gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10);
     let defaultSelectStoreman = smgList.length === 0 ? '' : smgList[0].groupId;
 
     // Convert the value of fee to USD

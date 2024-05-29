@@ -2,7 +2,8 @@ import { message } from 'antd';
 import intl from 'react-intl-universal';
 import TrezorConnect from '@trezor/connect-web';
 import { wandWrapper } from 'utils/support.js';
-import Common from '@ethereumjs/common';
+import { fillRawTxGasPrice } from 'utils/helper.js';
+import Common, { Hardfork } from '@ethereumjs/common';
 import { TransactionFactory } from '@ethereumjs/tx';
 const pu = require('promisefy-util');
 
@@ -13,14 +14,13 @@ export const trezorRawTx = async (param, BIP44Path) => {
     let rawTx = {
       from: param.from,
       chainId: Number(param.chainId),
-      Txtype: 1,
       to: param.to,
       value: param.value || '0x0',
       data: param.data,
       nonce: '0x' + param.nonce.toString(16),
-      gasPrice: '0x' + Number(param.gasPrice).toString(16),
       gasLimit: '0x' + Number(param.gasLimit).toString(16),
     };
+    fillRawTxGasPrice(param, rawTx);
     let raw = await pu.promisefy(signTransaction, [BIP44Path, rawTx], this);
     return Promise.resolve({ raw, rawTx })
   } catch (error) {
@@ -30,17 +30,24 @@ export const trezorRawTx = async (param, BIP44Path) => {
 }
 
 export const signTransaction = (path, tx, callback) => {
+  let transaction = {
+    to: tx.to,
+    value: tx.value,
+    data: tx.data,
+    chainId: tx.chainId,
+    nonce: tx.nonce,
+    gasLimit: tx.gasLimit
+  }
+  if (tx.type === '0x02') {
+    transaction.maxFeePerGas = tx.maxFeePerGas;
+    transaction.maxPriorityFeePerGas = tx.maxPriorityFeePerGas;
+  } else {
+    transaction.gasPrice = tx.gasPrice;
+  }
+  console.log('trezor signTransaction: %O', transaction);
   TrezorConnect.ethereumSignTransaction({
     path,
-    transaction: {
-      to: tx.to,
-      value: tx.value,
-      data: tx.data,
-      chainId: tx.chainId,
-      nonce: tx.nonce,
-      gasLimit: tx.gasLimit,
-      gasPrice: tx.gasPrice
-    }
+    transaction
   }).then((result) => {
     if (!result.success) {
       message.warn(intl.get('Trezor.signTransactionFailed'));
@@ -51,7 +58,7 @@ export const signTransaction = (path, tx, callback) => {
     tx.v = result.payload.v;
     tx.r = result.payload.r;
     tx.s = result.payload.s;
-    const common = Common.custom({ chainId: tx.chainId });
+    const common = Common.custom({ chainId: tx.chainId }, { hardfork: Hardfork.London, eips: [1559] });
     let newTx = TransactionFactory.fromTxData(tx, { common });
     let signedTx = '0x' + newTx.serialize().toString('hex');
     console.log('Signed tx: ', signedTx);
@@ -110,14 +117,13 @@ export const OsmTrezorTrans = async (tx, from, action, satellite) => {
     let rawTx = {
       from,
       chainId: Number(estimateData.chainId),
-      Txtype: 1,
       to: estimateData.to,
       value: estimateData.value,
       data: estimateData.data,
       nonce: '0x' + estimateData.nonce.toString(16),
-      gasPrice: '0x' + Number(estimateData.gasPrice).toString(16),
       gasLimit: '0x' + Number(estimateData.gasLimit).toString(16),
     };
+    fillRawTxGasPrice(estimateData, rawTx);
     let raw = await pu.promisefy(signTransaction, [tx.BIP44Path, rawTx], this);// Trezor sign
     // Send register validator
     let txHash = await pu.promisefy(wand.request, ['transaction_raw', { raw, chainType: 'WAN' }], this);

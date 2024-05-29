@@ -6,14 +6,13 @@ import { Table, Row, Col, message, Tag } from 'antd';
 import TokenTransHistory from 'components/TransHistory/TokenTransHistory';
 import CopyAndQrcode from 'components/CopyAndQrcode';
 import SendTokenNormalTrans from 'components/SendNormalTrans/SendTokenNormalTrans';
-import { WanTx, WanRawTx } from 'utils/hardwareUtils'
-import { checkAddrType, getWalletIdByType, getFullChainName } from 'utils/helper';
+import { checkAddrType, getWalletIdByType, getFullChainName, fillRawTxGasPrice } from 'utils/helper';
 import { WALLETID, TRANSTYPE, WANMAIN, WANTESTNET, BTCMAIN, BTCTESTNET, ETHMAIN, ETHTESTNET, BNBMAIN, BNBTESTNET, CHAINID, ETHCHAINID } from 'utils/settings';
 import { signTransaction } from 'componentUtils/trezor';
 import { formatNum } from 'utils/support';
 import style from './index.less';
 import * as ethUtil from 'ethereumjs-util';
-import Common from '@ethereumjs/common';
+import Common, { Hardfork } from '@ethereumjs/common';
 import { TransactionFactory } from '@ethereumjs/tx';
 
 message.config({
@@ -24,7 +23,6 @@ message.config({
 @inject(stores => ({
   chainId: stores.session.chainId,
   isMainNetwork: stores.session.isMainNetwork,
-  isLegacyWanPath: stores.session.isLegacyWanPath,
   language: stores.languageIntl.language,
   getTokenAmount: stores.tokens.getTokenAmount,
   currTokenAddr: stores.tokens.currTokenAddr,
@@ -74,7 +72,7 @@ class TokenTrans extends Component {
 
   sendLedgerTrans = (path, tx) => {
     message.info(intl.get('Ledger.signTransactionInLedger'));
-    const { chain, isMainNetwork, isLegacyWanPath } = this.props;
+    const { chain, isMainNetwork } = this.props;
     let chainId;
     if (chain === 'WAN') {
       chainId = isMainNetwork ? CHAINID.MAIN : CHAINID.TEST;
@@ -88,21 +86,13 @@ class TokenTrans extends Component {
       data: tx.data,
       chainId,
       nonce: '0x' + tx.nonce.toString(16),
-      gasLimit: tx.gasLimit,
-      gasPrice: '0x' + new BigNumber(tx.gasPrice).times(BigNumber(10).pow(9)).toString(16),
-      Txtype: 1
+      gasLimit: tx.gasLimit
     };
+    fillRawTxGasPrice(tx, formatTx, true);
     console.log({ formatTx })
-    let rawTx;
-    const common = Common.custom({ chainId });
-    if (isLegacyWanPath) {
-      formatTx.chainId = (chainId === 888) ? 1 : 3;
-      formatTx.data = formatTx.data || '0x';
-      rawTx = new WanRawTx(formatTx).serialize().toString('hex');
-    } else {
-      const ethTx = TransactionFactory.fromTxData(formatTx, { common });
-      rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
-    }
+    let common = Common.custom({ chainId }, { hardfork: Hardfork.London, eips: [1559] });
+    let ethTx = TransactionFactory.fromTxData(formatTx, { common });
+    let rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
     console.log('sendLedgerTrans %s rawTx: %O', path, rawTx);
     return new Promise((resolve, reject) => {
       wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx }, (err, sig) => {
@@ -115,7 +105,7 @@ class TokenTrans extends Component {
           formatTx.v = sig.v;
           formatTx.r = sig.r;
           formatTx.s = sig.s;
-          let newTx = isLegacyWanPath ? new WanTx(formatTx) : TransactionFactory.fromTxData(formatTx, { common });
+          let newTx = TransactionFactory.fromTxData(formatTx, { common });
           let signedTx = '0x' + newTx.serialize().toString('hex');
           console.log('sendLedgerTrans %s signedTx: %O', path, signedTx);
           resolve(signedTx);
@@ -168,6 +158,7 @@ class TokenTrans extends Component {
       amount: params.token,
       gasLimit: `0x${params.gasLimit.toString(16)}`,
       gasPrice: params.gasPrice,
+      baseFeePerGas: params.baseFeePerGas,
       nonce: params.nonce,
       data: params.data,
       satellite: {
@@ -213,15 +204,19 @@ class TokenTrans extends Component {
           } else { // TODO: suuport other EVMs
             chainId = isMainNetwork ? ETHCHAINID.MAIN : ETHCHAINID.TEST;
           }
-          signTransaction(params.path, {
+          let rawTx = {
             value: '0x',
             chainId,
             to: trans.to,
             data: trans.data,
             nonce: '0x' + trans.nonce.toString(16),
             gasLimit: trans.gasLimit,
+          };
+          fillRawTxGasPrice({
             gasPrice: '0x' + new BigNumber(trans.gasPrice).times(BigNumber(10).pow(9)).toString(16),
-          }, (_err, raw) => {
+            baseFeePerGas: '0x' + new BigNumber(trans.baseFeePerGas || 0).times(BigNumber(10).pow(9)).toString(16)
+          }, rawTx);
+          signTransaction(params.path, rawTx, (_err, raw) => {
             if (_err) {
               console.log('signTrezorTransaction:', _err)
               return;

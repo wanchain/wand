@@ -14,7 +14,7 @@ import sleep from 'ko-sleep';
 import Logger from '~/src/utils/Logger';
 import setting from '~/src/utils/Settings';
 import contacts from '~/src/utils/Contacts';
-import { dateFormat } from '~/src/app/utils/support';
+import { dateFormat, toWei } from '~/src/app/utils/support';
 import { Windows, walletBackend } from '~/src/modules';
 import menuFactoryService from '~/src/services/menuFactory';
 
@@ -1121,7 +1121,7 @@ ipc.on(ROUTE_TX, async (event, actionUni, payload) => {
     switch (action) {
         case 'normal':
             try {
-                let { walletID, chainType, symbol, path, to, amount, gasPrice, gasLimit, nonce, data, satellite, isSend = undefined } = payload
+                let { walletID, chainType, symbol, path, to, amount, gasPrice, baseFeePerGas, gasLimit, nonce, data, satellite, isSend = undefined } = payload
                 let from = await hdUtil.getAddress(walletID, chainType, path);
                 let fromAddr = from.address;
 
@@ -1135,12 +1135,14 @@ ipc.on(ROUTE_TX, async (event, actionUni, payload) => {
                     to: to,
                     amount: amount,
                     gasPrice: gasPrice,
+                    baseFeePerGas: baseFeePerGas,
                     gasLimit: gasLimit,
                     BIP44Path: path,
                     walletID: walletID,
                     nonce: nonce,
                     data: str2Hex(data),
-                    satellite: satellite
+                    satellite: satellite,
+                    type: 2
                 }
                 logger.info('Normal transaction: ' + JSON.stringify(input));
                 let srcChain = global.crossInvoker.getSrcChainNameByContractAddr(COIN_ACCOUNT, chainType);
@@ -1155,7 +1157,7 @@ ipc.on(ROUTE_TX, async (event, actionUni, payload) => {
 
         case 'tokenNormal':
             try {
-                let { walletID, chainType, symbol, path, to, amount, gasPrice, gasLimit, nonce, data, satellite } = payload
+                let { walletID, chainType, symbol, path, to, amount, gasPrice, baseFeePerGas, gasLimit, nonce, data, satellite } = payload
                 let from = await hdUtil.getAddress(walletID, chainType, path);
                 let fromAddr = from.address;
                 if (fromAddr.indexOf('0x') === -1) {
@@ -1167,12 +1169,14 @@ ipc.on(ROUTE_TX, async (event, actionUni, payload) => {
                     to: satellite.transferTo,
                     amount: amount,
                     gasPrice: gasPrice,
+                    baseFeePerGas: baseFeePerGas,
                     gasLimit: gasLimit,
                     BIP44Path: path,
                     walletID: walletID,
                     nonce: nonce,
                     data: data,
-                    satellite: satellite
+                    satellite: satellite,
+                    type: 2
                 }
 
                 logger.info('Token normal transaction: ' + JSON.stringify(input));
@@ -1399,6 +1403,18 @@ ipc.on(ROUTE_QUERY, async (event, actionUni, payload) => {
             }
             sendResponse([ROUTE_QUERY, [action, id].join('#')].join('_'), event, { err: err, data: ret })
             break;
+
+        case 'getGasInfo':
+          try {
+              ret = await ccUtil.getGasInfo(payload.chainType);
+              logger.info('Gas info: ' + payload.chainType + ',' + JSON.stringify(ret));
+              console.log('%s getGasInfo: %O', payload.chainType, ret);
+          } catch (e) {
+              logger.error(e.message || e.stack)
+              err = e
+          }
+          sendResponse([ROUTE_QUERY, [action, id].join('#')].join('_'), event, { err: err, data: ret })
+          break;
     }
 
 })
@@ -1428,9 +1444,10 @@ ipc.on(ROUTE_STAKING, async (event, actionUni, payload) => {
                 logger.info('PosStakeUpdateFeeRate: ' + payload);
 
                 let { tx } = payload;
-                let gasPrice = await ccUtil.getGasPrice('wan');
+                let gasInfo = await ccUtil.getGasInfo('wan');
                 tx.gasLimit = 200000;
-                tx.gasPrice = web3.utils.fromWei(gasPrice, 'gwei');
+                tx.gasPrice = gasInfo.gasPrice;
+                tx.baseFeePerGas = gasInfo.baseFeePerGas;
                 ret = await global.crossInvoker.PosStakeUpdateFeeRate(tx);
             } catch (e) {
                 logger.error(e.message || e.stack)
@@ -1524,11 +1541,10 @@ ipc.on(ROUTE_STAKING, async (event, actionUni, payload) => {
                     throw new Error('Validator Address is Invalid');
                 }
 
-                let gasPrice = await ccUtil.getGasPrice('wan');
-
-                let gasLimit = 200000;
-                tx.gasPrice = web3.utils.fromWei(gasPrice, 'gwei');;
-                tx.gasLimit = gasLimit;
+                let gasInfo = await ccUtil.getGasInfo('wan');
+                tx.gasPrice = gasInfo.gasPrice;
+                tx.baseFeePerGas = gasInfo.baseFeePerGas;
+                tx.gasLimit = 200000;
 
                 ret = await global.crossInvoker.PosDelegateIn(tx);
             } catch (e) {
@@ -1543,17 +1559,15 @@ ipc.on(ROUTE_STAKING, async (event, actionUni, payload) => {
                 logger.info('delegateOut:' + payload);
 
                 let tx = payload;
-                let gasPrice = await ccUtil.getGasPrice('wan');
-
-                let gasLimit = 200000;
-                let gasPriceGwei = web3.utils.fromWei(gasPrice, 'gwei');;
+                let gasInfo = await ccUtil.getGasInfo('wan');
 
                 let input = {
                     "from": tx.from,
                     "validatorAddr": tx.validator,
                     "amount": 0,
-                    "gasPrice": gasPriceGwei,
-                    "gasLimit": gasLimit,
+                    "gasPrice": gasInfo.gasPrice,
+                    "baseFeePerGas": gasInfo.baseFeePerGas,
+                    "gasLimit": 200000,
                     "BIP44Path": tx.path,
                     "walletID": tx.walletID,
                     "stakeAmount": tx.stakeAmount,
@@ -1572,11 +1586,12 @@ ipc.on(ROUTE_STAKING, async (event, actionUni, payload) => {
                 let { tx } = payload;
                 let key = Buffer.from(tx.secPk.toLowerCase().replace('0x', '').substring(2), 'hex');
                 let address = '0x' + keccak('keccak256').update(key).digest().slice(-20).toString('hex');
-                let gasPrice = await ccUtil.getGasPrice('wan');
+                let gasInfo = await ccUtil.getGasInfo('wan');
 
                 tx.gasLimit = 200000;
                 tx.minerAddr = address;
-                tx.gasPrice = web3.utils.fromWei(gasPrice, 'gwei');
+                tx.gasPrice = gasInfo.gasPrice;
+                tx.baseFeePerGas = gasInfo.baseFeePerGas;
                 logger.info('Register validator:' + JSON.stringify(tx));
                 ret = await global.crossInvoker.PosStakeRegister(tx);
             } catch (e) {
@@ -1591,9 +1606,10 @@ ipc.on(ROUTE_STAKING, async (event, actionUni, payload) => {
                 logger.info('validatorAppend: ' + payload);
 
                 let { tx } = payload;
-                let gasPrice = await ccUtil.getGasPrice('wan');
+                let gasInfo = await ccUtil.getGasInfo('wan');
                 tx.gasLimit = 200000;
-                tx.gasPrice = web3.utils.fromWei(gasPrice, 'gwei');
+                tx.gasPrice = gasInfo.gasPrice;
+                tx.baseFeePerGas = gasInfo.baseFeePerGas;
                 ret = await global.crossInvoker.PosStakeAppend(tx);
             } catch (e) {
                 logger.error(e.message || e.stack)
@@ -1605,9 +1621,10 @@ ipc.on(ROUTE_STAKING, async (event, actionUni, payload) => {
             try {
                 logger.info('validatorUpdate: ' + payload);
                 let { tx } = payload;
-                let gasPrice = await ccUtil.getGasPrice('wan');
+                let gasInfo = await ccUtil.getGasInfo('wan');
                 tx.gasLimit = 200000;
-                tx.gasPrice = web3.utils.fromWei(gasPrice, 'gwei');
+                tx.gasPrice = gasInfo.gasPrice;
+                tx.baseFeePerGas = gasInfo.baseFeePerGas;
                 ret = await global.crossInvoker.PosStakeUpdate(tx);
             } catch (e) {
                 logger.error(e.message || e.stack)
@@ -2661,8 +2678,9 @@ ipc.on(ROUTE_STOREMAN, async (event, actionUni, payload) => {
                 if (!tx.gasLimit || !Number(tx.gasLimit)) {
                     tx.gasLimit = 2000000;
                 }
-                // let gasPrice = await ccUtil.getGasPrice('wan');
-                tx.gasPrice = '1'; // web3.utils.fromWei(gasPrice, 'gwei');
+                let gasInfo = await ccUtil.getGasInfo('wan');
+                tx.gasPrice = gasInfo.gasPrice;
+                tx.baseFeePerGas = gasInfo.baseFeePerGas;
                 logger.info(`Open Storeman ${action}, isEstimateFee:${isEstimateFee}` + JSON.stringify(tx));
                 ret = await global.crossInvoker.invokeOpenStoremanTrans(action, tx, isEstimateFee);
                 if (action === 'delegateClaim' && isEstimateFee === false && ret.result) {

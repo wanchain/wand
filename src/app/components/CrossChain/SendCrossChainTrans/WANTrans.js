@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
-import { getGasPrice, getReadyOpenStoremanGroupList } from 'utils/helper';
+import { getGasInfo, getReadyOpenStoremanGroupList } from 'utils/helper';
 import CrossWANForm from 'components/CrossChain/CrossChainTransForm/CrossWANForm';
 import { FAST_GAS } from 'utils/settings';
 
@@ -25,7 +25,7 @@ class WANTrans extends Component {
     smgList: [],
     estimateFee: 0,
     tokenAddr: '',
-    gasPrice: 0,
+    gasPrice: {},
   }
 
   showModal = async () => {
@@ -40,7 +40,7 @@ class WANTrans extends Component {
     this.setState({ visible: true, loading: true, spin: true });
     addCrossTransTemplate(from, { chainType, path, walletID: record.walletID || record.wid });
     try {
-      let [gasPrice, smgList] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList()]);
+      let [gasPrice, smgList] = await Promise.all([getGasInfo(chainType), getReadyOpenStoremanGroupList()]);
       if (smgList.length === 0) {
         message.warn(intl.get('SendNormalTrans.smgUnavailable'));
         this.setState({ visible: false, spin: false, loading: false });
@@ -48,7 +48,7 @@ class WANTrans extends Component {
       }
       this.setState({
         smgList,
-        estimateFee: new BigNumber(gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10),
+        estimateFee: new BigNumber(gasPrice.gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10),
         gasPrice,
       });
       storeman = smgList[0].groupId;

@@ -12,7 +12,7 @@ import { signTransaction } from 'componentUtils/trezor';
 import CommonFormItem from 'componentUtils/CommonFormItem';
 import DelegationConfirmForm from './DelegationConfirmForm';
 import style from 'components/Staking/MyValidatorsList/index.less';
-import { getValueByAddrInfo, checkAmountUnit } from 'utils/helper';
+import { getValueByAddrInfo, checkAmountUnit, fillRawTxGasPrice } from 'utils/helper';
 
 const MINAMOUNT = 1;
 const pu = require('promisefy-util');
@@ -138,14 +138,13 @@ class ModifyForm extends Component {
       let rawTx = {
         from,
         chainId: Number(estimateData.chainId),
-        Txtype: 1,
         to: estimateData.to,
         value: estimateData.value,
         data: estimateData.data,
         nonce: '0x' + estimateData.nonce.toString(16),
-        gasPrice: '0x' + Number(estimateData.gasPrice).toString(16),
         gasLimit: '0x' + Number(new BigNumber(estimateData.gasLimit).multipliedBy(1.6).toString(10)).toString(16),
       };
+      fillRawTxGasPrice(estimateData, rawTx);
       let raw = await pu.promisefy(signTransaction, [BIP44Path, rawTx], this);// Trezor sign
       let txHash = await pu.promisefy(wand.request, ['transaction_raw', { raw, chainType: 'WAN' }], this);
 

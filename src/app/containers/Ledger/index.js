@@ -3,9 +3,8 @@ import { observer, inject } from 'mobx-react';
 import { message } from 'antd';
 import intl from 'react-intl-universal';
 import { WALLETID } from 'utils/settings';
-import { WanTx, WanRawTx } from 'utils/hardwareUtils';
 import * as ethUtil from 'ethereumjs-util';
-import Common from '@ethereumjs/common';
+import Common, { Hardfork } from '@ethereumjs/common';
 import { TransactionFactory } from '@ethereumjs/tx';
 import Accounts from 'components/HwWallet/Accounts';
 import ConnectHwWallet from 'components/HwWallet/Connect';
@@ -84,16 +83,12 @@ class Ledger extends Component {
   }
 
   signTransaction = (path, tx, callback) => {
-    let rawTx;
-    const common = Common.custom({ chainId: tx.chainId });
-    if (this.props.isLegacyWanPath) {
-      tx.chainId = (tx.chainId === 888) ? 1 : 3;
-      tx.data = tx.data || '0x';
-      rawTx = new WanRawTx(tx).serialize().toString('hex');
-    } else {
-      const ethTx = TransactionFactory.fromTxData(tx, { common });
-      rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
-    }
+    let common = Common.custom({ chainId: tx.chainId }, { hardfork: Hardfork.London, eips: [1559] });
+    console.log('tx: %O', tx);
+    let ethTx = TransactionFactory.fromTxData(tx, { common });
+    console.log('ethTx: %O', ethTx);
+    let rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
+    console.log('rawTx: %O', rawTx);
     message.info(intl.get('Ledger.signTransactionInLedger'));
     wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx }, (err, sig) => {
       if (err) {
@@ -104,7 +99,7 @@ class Ledger extends Component {
         tx.v = sig.v;
         tx.r = sig.r;
         tx.s = sig.s;
-        let newTx = this.props.isLegacyWanPath ? new WanTx(tx) : TransactionFactory.fromTxData(tx, { common });
+        let newTx = TransactionFactory.fromTxData(tx, { common });
         let signedTx = '0x' + newTx.serialize().toString('hex');
         console.log('Signed tx: ', signedTx);
         callback(null, signedTx);

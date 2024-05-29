@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
-import { getGasPrice, getSmgList } from 'utils/helper';
+import { getGasInfo, getSmgList } from 'utils/helper';
 import { INBOUND, REDEEMWEOS_GAS, LOCKWEOS_GAS, CROSS_TYPE } from 'utils/settings';
 import CrossEOSForm from 'components/CrossChain/CrossChainTransForm/CrossEOSForm';
 
@@ -48,10 +48,10 @@ class EOSTrans extends Component {
     this.setState(() => ({ visible: true, spin: true, loading: true }));
     addCrossTransTemplate(from, { path: record.path, crossType: CROSS_TYPE[1] }); // EOS只有HTLC
     try {
-      let [gasPrice, smgList] = await Promise.all([getGasPrice(info.toChainSymbol), getSmgList(info.fromChainSymbol, info.fromAccount)]);
+      let [gasPrice, smgList] = await Promise.all([getGasInfo(info.toChainSymbol), getSmgList(info.fromChainSymbol, info.fromAccount)]);
       this.setState({
         smgList,
-        estimateFee: new BigNumber(gasPrice).times(wanGas).div(BigNumber(10).pow(9)).toString(10)
+        estimateFee: new BigNumber(gasPrice.gasPrice).times(wanGas).div(BigNumber(10).pow(9)).toString(10)
       });
       storeman = smgList[0].storemanGroup;
       updateTransParams(from, { storeman, gasPrice, gasLimit: wanGas, txFeeRatio: smgList[0].txFeeRatio || 0, quota: direction === INBOUND ? smgList[0].inboundQuota : smgList[0].outboundQuota });

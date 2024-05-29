@@ -12,7 +12,7 @@ import StoremanConfirmForm from './StoremanConfirmForm';
 import { signTransaction } from 'componentUtils/trezor';
 import CommonFormItem from 'componentUtils/CommonFormItem';
 import style from 'components/Staking/MyValidatorsList/index.less';
-import { checkAmountUnit, getValueByAddrInfo } from 'utils/helper';
+import { checkAmountUnit, getValueByAddrInfo, fillRawTxGasPrice } from 'utils/helper';
 
 const ACTION = 'stakeClaim';
 const pu = require('promisefy-util');
@@ -152,14 +152,13 @@ class InForm extends Component {
       let rawTx = {
         from,
         chainId: Number(estimateData.chainId),
-        Txtype: 1,
         to: estimateData.to,
         value: estimateData.value,
         data: estimateData.data,
         nonce: '0x' + estimateData.nonce.toString(16),
-        gasPrice: '0x' + Number(estimateData.gasPrice).toString(16),
         gasLimit: '0x' + Number(new BigNumber(estimateData.gasLimit).multipliedBy(1.6).toString(10)).toString(16),
       };
+      fillRawTxGasPrice(estimateData, rawTx);
       let raw = await pu.promisefy(signTransaction, [BIP44Path, rawTx], this);// Trezor sign
 
       // Send register validator

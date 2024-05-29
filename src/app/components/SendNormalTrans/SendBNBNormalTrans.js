@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { message, Button, Form } from 'antd';
 import { observer, inject } from 'mobx-react';
 import intl from 'react-intl-universal';
-import { getNonce, getGasPrice, getBalanceByAddr } from 'utils/helper';
+import { getNonce, getGasInfo, getBalanceByAddr } from 'utils/helper';
 import BNBNormalTransForm from 'components/NormalTransForm/BNBNormalTrans/BNBNormalTransForm';
 
 const CollectionCreateForm = Form.create({ name: 'BNBNormalTransForm' })(BNBNormalTransForm);
@@ -34,7 +34,7 @@ class SendBNBNormalTrans extends Component {
     this.setState({ visible: true });
     addTransTemplate(from, { chainType, chainId });
     try {
-      let [nonce, gasPrice] = await Promise.all([getNonce(from, chainType), getGasPrice(chainType)]);
+      let [nonce, gasPrice] = await Promise.all([getNonce(from, chainType), getGasInfo(chainType)]);
       updateTransParams(from, { path, nonce, gasPrice });
       updateGasPrice(gasPrice, chainType);
       setTimeout(() => { this.setState({ spin: false }) }, 0)

@@ -4,7 +4,7 @@ module.exports = {
     address: [ 'get', 'getOne', 'getNonce', 'balance', 'balances', 'getPrivateTxInfo', 'scanMultiOTA', 'stopScanMultiOTA', 'stopSingleScan', 'initScanOTA', 'isWanAddress', 'isXrpAddress', 'fromKeyFile', 'getKeyStoreCount', 'isValidatorAddress', 'ethBalance', 'isEthAddress', 'btcImportAddress', 'getBtcMultiBalances', 'btcCoinSelect', 'btcCoinSelectSplit', 'getEosAccountInfo', 'getEOSResourcePrice', 'getRamPrice', 'isEosPublicKey', 'isEosNameExist', 'getNewPathIndex', 'getNewNameForNativeAccount', 'isValidPrivateKey', 'getRegisteredCoinGecko', 'getAllBalances' ],
     account: [ 'create', 'get', 'getAllAccounts', 'getAll', 'update', 'delete', 'getAccountByPublicKey', 'setImportedUserAccounts', 'getImportedAccountsByPublicKey', 'getAccountStakeInfo', 'deleteEOSImportedAccounts' ],
     transaction: [ 'normal', 'private', 'refund', 'raw', 'estimateGas', 'showRecords', 'insertTransToDB', 'BTCNormal', 'XRPNormal', 'EOSNormal', 'tokenNormal', 'estimateSmartFee', 'converter' ],
-    query: [ 'config', 'getGasPrice' ],
+    query: [ 'config', 'getGasPrice', 'getGasInfo' ],
     staking: [ 'getContractAddr', 'info', 'delegateIn', 'delegateOut', 'getContractData', 'insertTransToDB', 'posInfo', 'registerValidator', 'insertRegisterValidatorToDB', 'validatorInfo', 'validatorAppend', 'validatorUpdate', 'getValidatorsInfo', 'getCurrentEpochInfo', 'PosStakeUpdateFeeRate' ],
     setting: ['switchNetwork', 'set', 'get', 'updateDapps', 'getDapps', 'getDAppInjectFile', 'rpcDelay', 'wanNodeDelay', 'ethNodeDelay', 'btcNodeDelay', 'eosNodeDelay', 'resetSettingsByOptions'],
     contact: ['get', 'addAddress', 'addPrivateAddress', 'delAddress', 'delPrivateAddress', 'reset'],
