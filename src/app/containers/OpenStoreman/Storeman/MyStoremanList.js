@@ -84,10 +84,10 @@ class MyStoremanList extends Component {
       {
         ...osmStoremanListColumns[3],
         render: rank => {
-          if (rank[0].toString() === '-1') {
+          if (rank[0] !== undefined && rank[0].toString() === '-1') {
             return <div><span>&gt;</span><span>{rank[1]}</span></div>
           } else {
-            return <div><span>{rank[0]}</span>/<span>{rank[1]}</span></div>
+            return <div><span>{rank[0] === undefined ? '--' : rank[0]}</span> / <span>{rank[1]}</span></div>
           }
         }
       },

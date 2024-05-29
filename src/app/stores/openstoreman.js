@@ -68,55 +68,59 @@ class OpenStoreman {
 
   @computed get storemanListData () {
     let data = [];
-    this.storemanListInfo.forEach((item, index) => {
-      let accountInfo = getInfoByAddress(item.from, ['name', 'path'], wanAddress.addrInfo);
-      let groupInfo = this.storemanGroupList.find(v => v.groupId === item.groupId);
-      if (!groupInfo) {
-        groupInfo = this.missingGroupListInfo.find(v => v.groupId === item.groupId);
-      }
-      let nextGroupInfo = this.storemanGroupList.find(v => v.groupId === item.nextGroupId)
-      if (accountInfo && groupInfo && accountInfo.type) {
-        accountInfo.path = accountInfo.type !== 'normal' ? getValueByAddrInfo(accountInfo.addr, 'path', wanAddress.addrInfo) : `${WANPATH}${accountInfo.path}`;
-        accountInfo.walletID = accountInfo.type !== 'normal' ? WALLETID[accountInfo.type.toUpperCase()] : WALLETID.NATIVE;
-        let rank;
-        let status = storemanGroupStatus[groupInfo.status];
-        let nextRank = this.selectedStoremanInfo[item.nextGroupId];
-        if (item.nextGroupId !== INIT_GROUPID && nextRank && nextGroupInfo) {
-          status = storemanGroupStatus[nextGroupInfo.status];
-          let index = nextRank.findIndex(v => v.toLowerCase() === item.wkAddr.toLowerCase());
-          rank = [index === -1 ? index : index + 1, nextRank.length];
-        } else {
-          rank = [item.rank, item.selectedCount];
+    try {
+      this.storemanListInfo.forEach((item, index) => {
+        let accountInfo = getInfoByAddress(item.from, ['name', 'path'], wanAddress.addrInfo);
+        let groupInfo = this.storemanGroupList.find(v => v.groupId === item.groupId);
+        if (!groupInfo) {
+          groupInfo = this.missingGroupListInfo.find(v => v.groupId === item.groupId);
         }
-        if (status !== 'Selecting' && rank[0].toString() === '-1') {
-          status = 'Unselected';
+        let nextGroupInfo = this.storemanGroupList.find(v => v.groupId === item.nextGroupId)
+        if (accountInfo && groupInfo && accountInfo.type) {
+          accountInfo.path = accountInfo.type !== 'normal' ? getValueByAddrInfo(accountInfo.addr, 'path', wanAddress.addrInfo) : `${WANPATH}${accountInfo.path}`;
+          accountInfo.walletID = accountInfo.type !== 'normal' ? WALLETID[accountInfo.type.toUpperCase()] : WALLETID.NATIVE;
+          let rank;
+          let status = storemanGroupStatus[groupInfo.status];
+          let nextRank = this.selectedStoremanInfo[item.nextGroupId];
+          if (item.nextGroupId !== INIT_GROUPID && nextRank && nextGroupInfo) {
+            status = storemanGroupStatus[nextGroupInfo.status];
+            let index = nextRank.findIndex(v => v.toLowerCase() === item.wkAddr.toLowerCase());
+            rank = [index === -1 ? index : index + 1, nextRank.length];
+          } else {
+            rank = [item.rank, item.selectedCount];
+          }
+          if (status !== 'Selecting' && rank[0] !== undefined && rank[0].toString() === '-1') {
+            status = 'Unselected';
+          }
+          let unclaimedData = item.canStakeClaim ? new BigNumber(fromWei(item.incentive)).plus(fromWei(item.deposit)).toString(10) : fromWei(item.incentive);
+          data.push({
+            rank,
+            key: index,
+            quited: item.quited,
+            account: accountInfo.name,
+            myAddress: accountInfo,
+            stake: fromWei(item.deposit),
+            groupId: item.groupId,
+            groupIdName: hexCharCodeToStr(item.groupId),
+            nextGroupIdName: item.nextGroupId === INIT_GROUPID ? null : hexCharCodeToStr(item.nextGroupId),
+            slash: item.slashedCount,
+            activity: item.activity,
+            reward: floorFun(fromWei(item.incentive), 2),
+            unclaimed: floorFun(unclaimedData, 2),
+            unclaimedData,
+            crosschain: `${groupInfo.chain1[2]} <-> ${groupInfo.chain2[2]}`,
+            status: languageIntl.language && intl.get(`Storeman.${status.toLowerCase()}`),
+            oriStatus: status.toLowerCase(),
+            wkAddr: item.wkAddr,
+            canStakeOut: item.canStakeOut,
+            canStakeClaim: item.canStakeClaim,
+            minStakeIn: fromWei(groupInfo.minStakeIn),
+          })
         }
-        let unclaimedData = item.canStakeClaim ? new BigNumber(fromWei(item.incentive)).plus(fromWei(item.deposit)).toString(10) : fromWei(item.incentive);
-        data.push({
-          rank,
-          key: index,
-          quited: item.quited,
-          account: accountInfo.name,
-          myAddress: accountInfo,
-          stake: fromWei(item.deposit),
-          groupId: item.groupId,
-          groupIdName: hexCharCodeToStr(item.groupId),
-          nextGroupIdName: item.nextGroupId === INIT_GROUPID ? null : hexCharCodeToStr(item.nextGroupId),
-          slash: item.slashedCount,
-          activity: item.activity,
-          reward: floorFun(fromWei(item.incentive), 2),
-          unclaimed: floorFun(unclaimedData, 2),
-          unclaimedData,
-          crosschain: `${groupInfo.chain1[2]} <-> ${groupInfo.chain2[2]}`,
-          status: languageIntl.language && intl.get(`Storeman.${status.toLowerCase()}`),
-          oriStatus: status.toLowerCase(),
-          wkAddr: item.wkAddr,
-          canStakeOut: item.canStakeOut,
-          canStakeClaim: item.canStakeClaim,
-          minStakeIn: fromWei(groupInfo.minStakeIn),
-        })
-      }
-    });
+      });
+    } catch (error) {
+      console.log('get storemanListData', error);
+    }
     return data;
   }
 
