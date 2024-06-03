@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
-import { getGasPrice, getReadyOpenStoremanGroupList } from 'utils/helper';
+import { getGasPrice, getReadyOpenStoremanGroupList, getChainQuotaHiddenFlagDirectionally } from 'utils/helper';
 import CrossWANForm from 'components/CrossChain/CrossChainTransForm/CrossWANForm';
 import { FAST_GAS } from 'utils/settings';
 
@@ -12,6 +12,7 @@ const TransForm = Form.create({ name: 'CrossWANForm' })(CrossWANForm);
 @inject(stores => ({
   language: stores.languageIntl.language,
   tokenPairs: stores.crossChain.tokenPairs,
+  currentTokenPairInfo: stores.crossChain.currentTokenPairInfo,
   updateTransParams: (addr, paramsObj) => stores.sendCrossChainParams.updateTransParams(addr, paramsObj),
   addCrossTransTemplate: (addr, params) => stores.sendCrossChainParams.addCrossTransTemplate(addr, params),
 }))
@@ -26,10 +27,11 @@ class WANTrans extends Component {
     estimateFee: 0,
     tokenAddr: '',
     gasPrice: 0,
+    hideQuota: false
   }
 
   showModal = async () => {
-    const { from, path, addCrossTransTemplate, updateTransParams, tokenPairs, chainPairId, chainType, record } = this.props;
+    const { from, path, addCrossTransTemplate, updateTransParams, tokenPairs, chainPairId, chainType, record, currentTokenPairInfo } = this.props;
     if (!(chainPairId in tokenPairs)) {
       return false;
     }
@@ -40,16 +42,26 @@ class WANTrans extends Component {
     this.setState({ visible: true, loading: true, spin: true });
     addCrossTransTemplate(from, { chainType, path, walletID: record.wid });
     try {
-      let [gasPrice, smgList] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList()]);
+      const { fromChainID, toChainID } = currentTokenPairInfo;
+      let hideQuota = false;
+      let [gasPrice, smgList, hideQuotaChains] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID])]);
       if (smgList.length === 0) {
         message.warn(intl.get('SendNormalTrans.smgUnavailable'));
         this.setState({ visible: false, spin: false, loading: false });
         return;
       }
+      if (hideQuotaChains) {
+        if (hideQuotaChains[fromChainID] && (hideQuotaChains[fromChainID].hiddenSourceChainQuota === true)) {
+          hideQuota = true;
+        } else if (hideQuotaChains[toChainID] && (hideQuotaChains[toChainID].hiddenTargetChainQuota === true)) {
+          hideQuota = true;
+        }
+      }
       this.setState({
         smgList,
         estimateFee: new BigNumber(gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10),
         gasPrice,
+        hideQuota
       });
       storeman = smgList[0].groupId;
       updateTransParams(from, {
@@ -84,13 +96,13 @@ class WANTrans extends Component {
   }
 
   render() {
-    const { visible, loading, spin, smgList, estimateFee, tokenAddr, gasPrice } = this.state;
+    const { visible, loading, spin, smgList, estimateFee, tokenAddr, gasPrice, hideQuota } = this.state;
     const { balance, from, type, account, record } = this.props;
     return (
       <div>
         <Button type="primary" onClick={this.showModal}>{intl.get('Common.convert')}</Button>
         {visible &&
-          <TransForm balance={balance} from={from} account={account} gasPrice={gasPrice} tokenAddr={tokenAddr} record={record} chainType={this.props.chainType} type={type} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
+          <TransForm balance={balance} from={from} account={account} gasPrice={gasPrice} hideQuota={hideQuota} tokenAddr={tokenAddr} record={record} chainType={this.props.chainType} type={type} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
         }
       </div>
     );

@@ -1003,6 +1003,17 @@ ipc.on(ROUTE_ACCOUNT, async (event, actionUni, payload) => {
             sendResponse([ROUTE_ACCOUNT, [action, id].join('#')].join('_'), event, { err: err, data: ret })
             break
 
+        case 'hasHackerAccount':
+            try {
+                ret = await ccUtil.hasHackerAccount(payload.address);
+            } catch (e) {
+                logger.error('hasHackerAccount: ' + e.message || e.stack)
+                err = e
+            }
+
+            sendResponse([ROUTE_ACCOUNT, [action, id].join('#')].join('_'), event, { err: err, data: ret })
+            break
+
         case 'getAll':
             try {
                 ret = hdUtil.getUserAccountForChain(payload.chainID)
@@ -1921,6 +1932,27 @@ ipc.on(ROUTE_CROSSCHAIN, async (event, actionUni, payload) => {
             sendResponse([ROUTE_CROSSCHAIN, [action, id].join('#')].join('_'), event, { err: err, data: ret })
             break
 
+        case 'getChainQuotaHiddenFlagDirectionally':
+          try {
+              let { chainIds } = payload;
+              ret = await ccUtil.getChainQuotaHiddenFlagDirectionally(chainIds);
+          } catch (e) {
+              logger.error('getChainQuotaHiddenFlagDirectionally failed: ' + e)
+              err = e
+          }
+          sendResponse([ROUTE_CROSSCHAIN, [action, id].join('#')].join('_'), event, { err: err, data: ret })
+          break
+
+        case 'getWanBridgeDiscounts':
+          try {
+              ret = await ccUtil.getWanBridgeDiscounts();
+          } catch (e) {
+              logger.error('getWanBridgeDiscounts failed: ' + e)
+              err = e
+          }
+          sendResponse([ROUTE_CROSSCHAIN, [action, id].join('#')].join('_'), event, { err: err, data: ret })
+          break
+
         case 'getMintQuota':
             try {
                 let { chainType, tokenPairID, storemanGroupID } = payload;
@@ -2699,7 +2731,7 @@ ipc.on(ROUTE_STOREMAN, async (event, actionUni, payload) => {
             try {
                 logger.debug(`Try ${action}`);
                 ret = await ccUtil.getReadyOpenStoremanGroupList();
-                logger.debug(`Return ${action}: ${ret.length ? JSON.stringify(ret, null, 4) : null}`);
+                // logger.debug(`Return ${action}: ${ret.length ? JSON.stringify(ret, null, 4) : null}`);
             } catch (e) {
                 logger.error(e.message || e.stack)
                 err = e

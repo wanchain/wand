@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
-import { getReadyOpenStoremanGroupList, getGasPrice, estimateSmartFee } from 'utils/helper';
+import { getReadyOpenStoremanGroupList, getGasPrice, estimateSmartFee, getChainQuotaHiddenFlagDirectionally } from 'utils/helper';
 import { INBOUND, OUTBOUND, FAST_GAS } from 'utils/settings';
 import CrossBTCForm from 'components/CrossChain/CrossChainTransForm/CrossBTCForm';
 
@@ -27,7 +27,8 @@ class BTCTrans extends Component {
     loading: false,
     visible: false,
     smgList: [],
-    estimateFee: 0
+    estimateFee: 0,
+    hideQuota: false
   }
 
   showModal = async () => {
@@ -37,7 +38,8 @@ class BTCTrans extends Component {
       addCrossTransTemplate(from, { chainType, path, walletID: record.walletID });
     }
     try {
-      let smgList = await getReadyOpenStoremanGroupList();
+      const { fromChainID, toChainID } = info;
+      let [smgList, hideQuotaChains] = await Promise.all([getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID])]);
       smgList = smgList.filter(smg => Number(smg.curve1) === 0 || Number(smg.curve2) === 0);
       if (smgList.length === 0) {
         this.setState(() => ({ visible: false, spin: false, loading: false }));
@@ -45,6 +47,7 @@ class BTCTrans extends Component {
         return;
       }
       let estimateFee;
+      let hideQuota = false;
       let smgId = smgList[0].groupId;
       if (direction === INBOUND) {
         estimateFee = 0;
@@ -63,12 +66,19 @@ class BTCTrans extends Component {
           storeman: smgId,
         });
       }
-
+      if (hideQuotaChains) {
+        if (hideQuotaChains[fromChainID] && (hideQuotaChains[fromChainID].hiddenSourceChainQuota === true)) {
+          hideQuota = true;
+        } else if (hideQuotaChains[toChainID] && (hideQuotaChains[toChainID].hiddenTargetChainQuota === true)) {
+          hideQuota = true;
+        }
+      }
       this.setState({
         smgList,
         estimateFee,
         spin: false,
         loading: false,
+        hideQuota
       });
     } catch (err) {
       console.log('showModal:', err);
@@ -95,7 +105,7 @@ class BTCTrans extends Component {
   }
 
   render() {
-    const { visible, loading, spin, smgList, estimateFee } = this.state;
+    const { visible, loading, spin, smgList, estimateFee, hideQuota } = this.state;
     const { from, getAmount, direction, getTokensListInfo, name } = this.props;
     let balance;
     if (direction === INBOUND) {
@@ -108,7 +118,7 @@ class BTCTrans extends Component {
       <div>
         <Button type="primary" onClick={this.showModal} >{intl.get('Common.convert')}</Button>
         { visible &&
-          <CollectionCreateForm name={name} from={this.props.from} balance={balance} direction={this.props.direction} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
+          <CollectionCreateForm name={name} from={this.props.from} hideQuota={hideQuota} balance={balance} direction={this.props.direction} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
         }
       </div>
     );

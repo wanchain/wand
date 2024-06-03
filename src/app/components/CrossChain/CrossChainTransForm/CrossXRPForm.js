@@ -11,12 +11,13 @@ import PwdForm from 'componentUtils/PwdForm';
 import SelectForm from 'componentUtils/SelectForm';
 import CommonFormItem from 'componentUtils/CommonFormItem';
 import AddContactsModal from '../../AddContacts/AddContactsModal';
+import HackerAccountVisible from 'componentUtils/HasHackerAccount';
 import ChooseContactsModal from '../../AddContacts/ChooseContactsModal';
 import outboundOptionForm from 'components/AdvancedCrossChainOptionForm';
 import ConfirmForm from 'components/CrossChain/CrossChainTransForm/ConfirmForm/CrossXRPConfirmForm';
 import { WANPATH, INBOUND, XRPPATH, OUTBOUND, MINXRPBALANCE, ETHPATH, WALLETID } from 'utils/settings';
-import { formatNumByDecimals, hexCharCodeToStr, isExceedBalance, formatNum, fromWei, removeRedundantDecimal } from 'utils/support';
-import { getFullChainName, getStoremanAddrByGpk1, getValueByAddrInfo, checkAmountUnit, getValueByNameInfo, getBalance, getInfoByAddress, getValueByNameInfoAllType } from 'utils/helper';
+import { formatNumByDecimals, hexCharCodeToStr, isExceedBalance, formatNum, fromWei } from 'utils/support';
+import { getFullChainName, getStoremanAddrByGpk1, getValueByAddrInfo, checkAmountUnit, getValueByNameInfo, getBalance, getInfoByAddress, getValueByNameInfoAllType, hasHackerAccount } from 'utils/helper';
 
 const pu = require('promisefy-util');
 const Confirm = Form.create({ name: 'CrossXRPConfirmForm' })(ConfirmForm);
@@ -27,7 +28,7 @@ const ChooseContactsModalForm = Form.create({ name: 'AddContactsModal' })(Choose
 
 const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   const { languageIntl, crossChain, tokens, session: { settings }, contacts: { contacts, addAddress, hasSameContact }, portfolio: { coinPriceObj }, sendCrossChainParams: { record, updateXRPTransParams, XRPCrossTransParams } } = useContext(MobXProviderContext)
-  const { toChainSymbol, fromTokenSymbol, fromChainName, toTokenSymbol, toChainName, fromChainSymbol, ancestorDecimals } = crossChain.currentTokenPairInfo
+  const { toChainSymbol, fromTokenSymbol, fromChainName, toTokenSymbol, toChainName, fromChainSymbol, ancestorDecimals, fromChainID, toChainID } = crossChain.currentTokenPairInfo
   const { type, name, balance, address } = record;
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [receivedAmount, setReceivedAmount] = useState('0');
@@ -39,12 +40,14 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   const [showChooseContacts, setShowChooseContacts] = useState(false);
   const [operationFee, setOperationFee] = useState('0')
   const [networkFee, setNetworkFee] = useState('0')
+  const [hackerAccountVisible, setHackerAccountVisible] = useState(false)
 
   const { status: fetchGroupListStatus, value: smgList } = useAsync('storeman_getReadyOpenStoremanGroupList', [], true);
   const { status: estimateCrossChainNetworkFeeStatus, value: estimateCrossChainNetworkFee, execute: executeEstimateCrossChainNetworkFee } = useAsync('crossChain_estimateCrossChainNetworkFee', { value: '0', isPercent: false, minFeeLimit: '0', maxFeeLimit: '0', discountPercent: '1' }, false);
   const { status: estimateCrossChainOperationFeeStatus, value: estimateCrossChainOperationFee, execute: executeEstimateCrossChainOperationFee } = useAsync('crossChain_estimateCrossChainOperationFee', { value: '0', isPercent: false, minFeeLimit: '0', maxFeeLimit: '0', discountPercent: '1' }, false);
 
   const { status: fetchQuotaStatus, value: quotaList, execute: executeGetQuota } = useAsync('crossChain_getQuota', [{}], false);
+  const { status: getChainQuotaHiddenFlagDirectionallyStatus, value: hideQuotaChains } = useAsync('crossChain_getChainQuotaHiddenFlagDirectionally', null, true, { chainIds: [fromChainID, toChainID] });
   const { status: fetchFeeStatus, value: estimatedFee, execute: executeEstimatedFee } = useAsync('crossChain_estimatedXrpFee', '0', false);
   const { status: fetchGasPrice, value: gasPrice } = useAsync('query_getGasPrice', '0', type === OUTBOUND, { chainType: toChainSymbol });
   const { value: getAllBalances } = useAsync('address_getAllBalances', [{ currency: 'XRP', value: [] }], type === INBOUND, { chainType: type === INBOUND ? fromChainSymbol : toChainSymbol, address });
@@ -83,8 +86,16 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   }, [fetchGroupListStatus, fetchQuotaStatus, estimateCrossChainOperationFeeStatus, estimateCrossChainNetworkFeeStatus, fetchGasPrice, fetchFeeStatus, handleNextStatus])
 
   const maxQuota = useMemo(() => {
-    return formatNumByDecimals(quotaList[0].maxQuota, ancestorDecimals)
-  }, [quotaList])
+    let hideQuota = false;
+    if (hideQuotaChains) {
+      if (hideQuotaChains[fromChainID] && (hideQuotaChains[fromChainID].hiddenSourceChainQuota === true)) {
+        hideQuota = true;
+      } else if (hideQuotaChains[toChainID] && (hideQuotaChains[toChainID].hiddenTargetChainQuota === true)) {
+        hideQuota = true;
+      }
+    }
+    return hideQuota ? '0' : formatNumByDecimals(quotaList[0].maxQuota, ancestorDecimals)
+  }, [quotaList, getChainQuotaHiddenFlagDirectionallyStatus])
 
   const minQuota = useMemo(() => {
     return formatNumByDecimals(quotaList[0].minQuota, ancestorDecimals)
@@ -113,9 +124,9 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
 
   const crosschainFee = useMemo(() => {
     if (info.networkFeeUnit === info.operationFeeUnit) {
-      return `${new BigNumber(networkFee).plus(operationFee).toString()} ${info.networkFeeUnit}`;
+      return `${new BigNumber(networkFee).plus(operationFee).toString(10)} ${info.networkFeeUnit}`;
     } else {
-      return `${new BigNumber(networkFee).toString()} ${info.networkFeeUnit} + ${new BigNumber(operationFee).toString()} ${info.operationFeeUnit}`;
+      return `${new BigNumber(networkFee).toString(10)} ${info.networkFeeUnit} + ${new BigNumber(operationFee).toString(10)} ${info.operationFeeUnit}`;
     }
   }, [fee, coinPriceObj, operationFee, networkFee]);
 
@@ -188,7 +199,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
 
   const handleNext = () => {
     setHandleNextStatus(true)
-    form.validateFields(err => {
+    form.validateFields(async err => {
       if (err) {
         console.log('handleNext', err);
         setHandleNextStatus(false)
@@ -238,6 +249,13 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
       } else {
         to = toAddr = toValue;
       }
+
+      const hackerAccount = await hasHackerAccount([toAddr, address])
+      if (hackerAccount) {
+        setHackerAccountVisible(true)
+        return;
+      }
+
       const params = { value: amount, to, toAddr, estimateCrossChainNetworkFee: estimateCrossChainNetworkFee.value, receivedAmount, networkFee, crosschainFee }
       if (settings.reinput_pwd) {
         if (!pwd) {
@@ -663,6 +681,9 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
       }
       {
         showChooseContacts && <ChooseContactsModalForm list={contactsList} to={getChooseToAdd()} handleChoose={handleChoose} onCancel={() => setShowChooseContacts(!showChooseContacts)}></ChooseContactsModalForm>
+      }
+      {
+        hackerAccountVisible && <HackerAccountVisible handleCancel={() => setHackerAccountVisible(false)}/>
       }
     </React.Fragment>
   )

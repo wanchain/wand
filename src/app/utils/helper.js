@@ -106,6 +106,19 @@ export const getRegisteredTokenList = function() {
   })
 }
 
+export const hasHackerAccount = async function(address) {
+  return new Promise((resolve, reject) => {
+    wand.request('account_hasHackerAccount', { address }, (err, val) => {
+      if (err) {
+        console.log(`hasHackerAccount failed`, err)
+        return reject(err)
+      } else {
+        return resolve(val);
+      }
+    })
+  });
+}
+
 export const getBTCMultiBalances = function (addresses) {
   return new Promise((resolve, reject) => {
     wand.request('address_getBtcMultiBalances', { minconf: MIN_CONFIRM_BLKS, maxconf: MAX_CONFIRM_BLKS, addresses }, (err, data) => {
@@ -276,6 +289,32 @@ export const getStoremanGroupList = function (srcChainName, dstChainName) {
     wand.request('crossChain_getStoremanGroupList', { srcChainName, dstChainName }, (err, val) => {
       if (err) {
         console.log('Get Smg list2 failed', err)
+        return reject(err);
+      } else {
+        return resolve(val);
+      }
+    });
+  })
+}
+
+export const getChainQuotaHiddenFlagDirectionally = function (chainIds) {
+  return new Promise((resolve, reject) => {
+    wand.request('crossChain_getChainQuotaHiddenFlagDirectionally', { chainIds }, (err, val) => {
+      if (err) {
+        console.log('getChainQuotaHiddenFlagDirectionally failed', err)
+        return reject(err);
+      } else {
+        return resolve(val);
+      }
+    });
+  })
+}
+
+export const getWanBridgeDiscounts = function () {
+  return new Promise((resolve, reject) => {
+    wand.request('crossChain_getWanBridgeDiscounts', {}, (err, val) => {
+      if (err) {
+        console.log('GetWanBridgeDiscounts failed', err)
         return reject(err);
       } else {
         return resolve(val);

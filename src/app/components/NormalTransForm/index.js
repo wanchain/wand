@@ -446,10 +446,14 @@ class NormalTransForm extends Component {
                     : null
                   }
               </Form.Item>
-              <Form.Item label={intl.get('NormalTransForm.mode')}>
-                {getFieldDecorator('mode', { initialValue: !this.props.disablePrivateTx && isPrivate ? 'private' : 'normal' })
-                  (<Select disabled={true} showArrow={false} className={style.modeSelection}><Option value="normal">{intl.get('NormalTransForm.normalTransaction')}</Option><Option value="private">{intl.get('NormalTransForm.privateTransaction')}</Option></Select>)}
-              </Form.Item>
+              {
+                /**
+                  <Form.Item label={intl.get('NormalTransForm.mode')}>
+                    {getFieldDecorator('mode', { initialValue: !this.props.disablePrivateTx && isPrivate ? 'private' : 'normal' })
+                      (<Select disabled={true} showArrow={false} className={style.modeSelection}><Option value="normal">{intl.get('NormalTransForm.normalTransaction')}</Option><Option value="private">{intl.get('NormalTransForm.privateTransaction')}</Option></Select>)}
+                  </Form.Item>
+                **/
+              }
               <Form.Item label={intl.get('Common.amount')}>
                 {getFieldDecorator('amount', { rules: [{ required: true, validator: this.checkAmount }] })
                   (<Input disabled={disabledAmount} />)}

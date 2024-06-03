@@ -76,12 +76,6 @@ class WanAccount extends Component {
       render: (text, record) => <div className="addrText"><p className="address">{text}</p><CopyAndQrcode addr={text} type={CHAINTYPE} path={record.path} wid={record.wid} name={record.name} /></div>,
       width: '42%'
     },
-    // {
-    //   dataIndex: 'livePrivateBalance',
-    //   render: (text, record) => this.switchNode(record),
-    //   width: '17%',
-    //   align: 'center'
-    // },
     {
       dataIndex: 'balance',
       sorter: (a, b) => a.balance - b.balance,
@@ -92,13 +86,8 @@ class WanAccount extends Component {
       dataIndex: 'action',
       render: (text, record) => <div><SendNormalTrans balance={record.balance} buttonClassName={style.actionButton} walletID={record.wid} from={record.address} path={record.path} handleSend={this.handleSend} chainType={CHAINTYPE} /></div>,
       width: '13%'
-    },
-    {
-      dataIndex: 'blank',
-      key: 'expand',
-      width: '5%'
     }
-  ];
+  ].concat(this.props.settings.long_addresses ? [{ dataIndex: 'blank', key: 'expand', width: '5%' }] : []);
 
   columnsTree = this.columns.map((col) => {
     if (!col.editable) {
@@ -300,14 +289,14 @@ class WanAccount extends Component {
             <td style={{ width: '20%', padding: '0px 16px', textAlign: 'center' }}>{privateBalance}</td>
             <td style={{ width: '13%', padding: '0px 16px', display: 'flex' }}>
               <RedeemFromPrivate from={record.address} wid={record.wid} path={record.path} chainType={CHAINTYPE} />
-              <Tooltip placement="top" title={() => <>
+              <Tooltip placement="top" title={() => <div>
               <p>
               When toggled on, the balance of each corresponding private address will be scanned and kept current. It make take several minutes to complete the scan. Toggle off accounts to optimise wallet performance.
               </p>
               <p>
               Current Status:&nbsp;{intl.get(!checked ? 'Common.off' : 'Common.on')}
               </p>
-              </>}>
+              </div>}>
                 <Button type="primary" onClick={() => this.handleSingleScanOTA(record)} style={{ marginLeft: '16px' }}>
                   {intl.get(checked ? 'Common.disable' : 'Common.enable')}
                 </Button>
@@ -407,6 +396,8 @@ class WanAccount extends Component {
 
   render() {
     const { getAllAmount, getAddrList } = this.props;
+    const { long_addresses } = this.props.settings;
+
     const components = {
       body: {
         cell: EditableCell,

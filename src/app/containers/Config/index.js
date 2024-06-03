@@ -6,6 +6,7 @@ import style from './index.less';
 import { defaultTimeout } from 'utils/settings';
 import PasswordConfirmForm from 'components/PasswordConfirmForm';
 import ConfirmDeleteToken from './ConfirmDeleteToken';
+
 const { Option } = Select;
 const PwdConfirmForm = Form.create({ name: 'PasswordConfirmForm' })(PasswordConfirmForm);
 @inject(stores => ({
@@ -42,6 +43,10 @@ class Config extends Component {
     this.props.updateSettings({ offline_wallet: e.target.checked });
   }
 
+  handleLongAddresses = e => {
+    this.props.updateSettings({ long_addresses: e.target.checked });
+  }
+
   handleTimeoutChange = e => {
     this.props.updateSettings({ logout_timeout: e });
   }
@@ -70,7 +75,7 @@ class Config extends Component {
   }
 
   render() {
-    const { reinput_pwd, staking_advance, logout_timeout, offline_wallet, currency_unit } = this.props.settings;
+    const { reinput_pwd, staking_advance, logout_timeout, offline_wallet, currency_unit, long_addresses } = this.props.settings;
 
     const options = [{
       value: '0',
@@ -120,6 +125,9 @@ class Config extends Component {
           <p className={style['set_title']}>Currency Unit</p>
           <Checkbox checked={currency_unit === 'USD'} onChange={() => this.handleCurrencyunit('USD')}>USD ($)</Checkbox>
           <Checkbox checked={currency_unit === 'TRY'} onChange={() => this.handleCurrencyunit('TRY')}>TRY (₺)</Checkbox>
+          <div className={style['set_gap']}></div>
+          <p className={style['set_title']}>Enable Long Addresses(legacy)</p>
+          <Checkbox checked={long_addresses} onChange={this.handleLongAddresses}>Show long addresses(legacy) in compatible wallets</Checkbox>
         </Card>
       </div>
     );

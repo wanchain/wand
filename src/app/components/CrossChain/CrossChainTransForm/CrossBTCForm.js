@@ -9,14 +9,14 @@ import PwdForm from 'componentUtils/PwdForm';
 import SelectForm from 'componentUtils/SelectForm';
 import { isExceedBalance, formatNumByDecimals, removeRedundantDecimal, hexCharCodeToStr, fromWei } from 'utils/support';
 import CommonFormItem from 'componentUtils/CommonFormItem';
-// import AutoCompleteForm from 'componentUtils/AutoCompleteForm';
 import AddContactsModal from '../../AddContacts/AddContactsModal';
+import HackerAccountVisible from 'componentUtils/HasHackerAccount';
 import ChooseContactsModal from '../../AddContacts/ChooseContactsModal';
 import { INBOUND, OUTBOUND, WALLETID } from 'utils/settings';
 import outboundOptionForm from 'components/AdvancedCrossChainOptionForm';
 import OptionForm from 'components/AdvancedCrossChainOptionForm/AdvancedBTCCrossChainOptionForm';
 import ConfirmForm from 'components/CrossChain/CrossChainTransForm/ConfirmForm/CrossBTCConfirmForm';
-import { getFullChainName, getBalanceByAddr, checkAmountUnit, formatAmount, getValueByAddrInfo, getCrossChainContractData, getQuota, checkAddressByChainType, getValueByNameInfoAllType, getInfoByAddress, estimateCrossChainNetworkFee, estimateCrossChainOperationFee } from 'utils/helper';
+import { getFullChainName, getBalanceByAddr, checkAmountUnit, formatAmount, getValueByAddrInfo, getCrossChainContractData, getQuota, checkAddressByChainType, getValueByNameInfoAllType, getInfoByAddress, estimateCrossChainNetworkFee, estimateCrossChainOperationFee, hasHackerAccount } from 'utils/helper';
 
 const Confirm = Form.create({ name: 'CrossBTCConfirmForm' })(ConfirmForm);
 const AdvancedOptionForm = Form.create({ name: 'AdvancedBTCCrossChainOptionForm' })(OptionForm);
@@ -64,7 +64,6 @@ class CrossBTCForm extends Component {
     })
     this.state = {
       fee: 0,
-      crossChainNetworkFee: 0,
       confirmVisible: false,
       advancedVisible: false,
       feeRate: 0,
@@ -90,13 +89,14 @@ class CrossBTCForm extends Component {
       discountPercentOperationFee: '1',
       networkFeeRaw: {},
       operationFeeRaw: {},
-      totalFee: '0'
+      totalFee: '0',
+      hackerAccountVisible: false
     }
   }
 
   async componentDidUpdate(prevProps) {
     if (prevProps.smgList !== this.props.smgList) {
-      let { smgList, direction, currentTokenPairInfo: info } = this.props;
+      let { smgList, direction, currentTokenPairInfo: info, hideQuota } = this.props;
       try {
         const chainType = direction === INBOUND ? info.fromChainSymbol : info.toChainSymbol;
         const targetChainType = direction === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
@@ -104,7 +104,7 @@ class CrossBTCForm extends Component {
         const decimals = info.ancestorDecimals;
         this.setState({
           minQuota: formatNumByDecimals(minQuota, decimals),
-          maxQuota: formatNumByDecimals(maxQuota, decimals)
+          maxQuota: hideQuota ? '0' : formatNumByDecimals(maxQuota, decimals)
         })
       } catch (e) {
         console.log('e:', e);
@@ -189,7 +189,7 @@ class CrossBTCForm extends Component {
     const { sendAll, networkFee, contactsList } = this.state;
     let otherAddrInfo = Object.assign({}, getChainAddressInfoByChain(info.toChainSymbol));
     let isNativeAccount = false; // Figure out if the to value is contained in my wallet.
-    form.validateFields((err, { pwd, amount: sendAmount, to, totalFee }) => {
+    form.validateFields(async (err, { pwd, amount: sendAmount, to, totalFee }) => {
       if (err) {
         console.log('handleNext:', err);
         return;
@@ -231,6 +231,12 @@ class CrossBTCForm extends Component {
       } else if (contactsList.find(v => v.name === to || v.address === to)) {
         const contactItem = contactsList.find(v => v.name === to || v.address === to);
         to = contactItem.address;
+      }
+
+      const hackerAccount = await hasHackerAccount([to, this.props.from])
+      if (hackerAccount) {
+        this.setState({ hackerAccountVisible: true });
+        return;
       }
 
       if (direction === INBOUND) {
@@ -496,7 +502,7 @@ class CrossBTCForm extends Component {
   }
 
   updateLockAccounts = async (storeman) => {
-    const { updateBTCTransParams, updateTransParams, direction, currentTokenPairInfo: info, from } = this.props;
+    const { updateBTCTransParams, updateTransParams, direction, currentTokenPairInfo: info, from, hideQuota } = this.props;
     try {
       const chainType = direction === INBOUND ? info.fromChainSymbol : info.toChainSymbol;
       const targetChainType = direction === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
@@ -504,7 +510,7 @@ class CrossBTCForm extends Component {
       const decimals = info.ancestorDecimals;
       this.setState({
         minQuota: formatNumByDecimals(minQuota, decimals),
-        maxQuota: formatNumByDecimals(maxQuota, decimals)
+        maxQuota: hideQuota ? '0' : formatNumByDecimals(maxQuota, decimals)
       });
     } catch (e) {
       console.log('updateLockAccounts:', e);
@@ -618,7 +624,7 @@ class CrossBTCForm extends Component {
 
   render() {
     const { loading, form, from, settings, smgList, estimateFee, direction, addrInfo, balance, currentTokenPairInfo: info, getChainAddressInfoByChain, coinPriceObj, name } = this.props;
-    const { advancedVisible, feeRate, receive, crossChainNetworkFee, sendAll, isNewContacts, showAddContacts, showChooseContacts, contactsList, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee } = this.state;
+    const { advancedVisible, feeRate, receive, sendAll, isNewContacts, showAddContacts, showChooseContacts, contactsList, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible } = this.state;
     const { getFieldDecorator } = form;
     let gasFee, gasFeeWithUnit, desChain, defaultSelectStoreman, title, unit, toUnit, feeUnit, operationFeeUnit, networkFeeUnit;
     let otherAddrInfo = getChainAddressInfoByChain(info.toChainSymbol);
@@ -848,6 +854,9 @@ class CrossBTCForm extends Component {
         }
         {
           showChooseContacts && <ChooseContactsModalForm list={contactsList} to={this.getChooseToAdd()} handleChoose={this.handleChoose} onCancel={() => this.setState({ showChooseContacts: !showChooseContacts })}></ChooseContactsModalForm>
+        }
+        {
+          hackerAccountVisible && <HackerAccountVisible handleCancel={() => this.setState({ hackerAccountVisible: false })}/>
         }
       </div>
     );

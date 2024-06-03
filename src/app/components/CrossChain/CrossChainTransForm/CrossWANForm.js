@@ -10,11 +10,12 @@ import SelectForm from 'componentUtils/SelectForm';
 import CommonFormItem from 'componentUtils/CommonFormItem';
 import AddContactsModal from '../../AddContacts/AddContactsModal';
 import ChooseContactsModal from '../../AddContacts/ChooseContactsModal';
+import HackerAccountVisible from 'componentUtils/HasHackerAccount';
 import AdvancedCrossChainOptionForm from 'components/AdvancedCrossChainOptionForm';
 import { INBOUND, OUTBOUND, CROSS_TYPE, WAN_ETH_DECIMAL, WALLETID } from 'utils/settings';
 import ConfirmForm from 'components/CrossChain/CrossChainTransForm/ConfirmForm/CrossWANConfirmForm';
 import { isExceedBalance, formatNumByDecimals, hexCharCodeToStr, removeRedundantDecimal, fromWei } from 'utils/support';
-import { getFullChainName, checkAmountUnit, formatAmount, getValueByAddrInfo, getValueByNameInfoAllType, checkAddressByChainType, getQuota, getInfoByAddress, estimateCrossChainNetworkFee, estimateCrossChainOperationFee } from 'utils/helper';
+import { getFullChainName, checkAmountUnit, formatAmount, getValueByAddrInfo, getValueByNameInfoAllType, checkAddressByChainType, getQuota, getInfoByAddress, estimateCrossChainNetworkFee, estimateCrossChainOperationFee, hasHackerAccount } from 'utils/helper';
 
 const Confirm = Form.create({ name: 'CrossWANConfirmForm' })(ConfirmForm);
 const AdvancedCrossChainModal = Form.create({ name: 'AdvancedCrossChainOptionForm' })(AdvancedCrossChainOptionForm);
@@ -71,20 +72,21 @@ class CrossWANForm extends Component {
       discountPercentOperationFee: '1',
       networkFeeRaw: {},
       operationFeeRaw: {},
-      totalFee: '0'
+      totalFee: '0',
+      hackerAccountVisible: false
     }
   }
 
   async componentDidUpdate(prevProps) {
     if (prevProps.smgList !== this.props.smgList) {
-      let { smgList, currentTokenPairInfo: info, chainType, type } = this.props;
+      let { smgList, currentTokenPairInfo: info, chainType, type, hideQuota } = this.props;
       try {
         const targetChainType = type === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
         let [{ minQuota, maxQuota }] = await getQuota(chainType, smgList[0].groupId, [info.ancestorSymbol], { targetChainType });
         const decimals = info.ancestorDecimals;
         this.setState({
           minQuota: formatNumByDecimals(minQuota, decimals),
-          maxQuota: formatNumByDecimals(maxQuota, decimals)
+          maxQuota: hideQuota ? '0' : formatNumByDecimals(maxQuota, decimals)
         })
       } catch (e) {
         console.log('e:', e);
@@ -190,23 +192,11 @@ class CrossWANForm extends Component {
     const { networkFee, contactsList } = this.state;
     let toAddrInfo = getChainAddressInfoByChain(info[type === INBOUND ? 'toChainSymbol' : 'fromChainSymbol']);
     let isNativeAccount = false; // Figure out if the to value is contained in my wallet.
-    form.validateFields(['from', 'balance', 'storemanAccount', 'quota', 'to', 'totalFee', 'amount'], { force: true }, (err, { pwd, amount: sendAmount, to }) => {
+    form.validateFields(['from', 'balance', 'storemanAccount', 'quota', 'to', 'totalFee', 'amount'], { force: true }, async (err, { pwd, amount: sendAmount, to }) => {
       if (err) {
         console.log('validate form data failed:', err);
         return;
       };
-
-      // const { minQuota, maxQuota } = this.state;
-
-      // if (new BigNumber(sendAmount).lt(minQuota)) {
-      //   message.warn(`${intl.get('CrossChainTransForm.UnderFastMinimum')}: ${removeRedundantDecimal(minQuota, 2)} ${info[type === INBOUND ? 'fromTokenSymbol' : 'toTokenSymbol']}`);
-      //   return;
-      // }
-
-      // if (new BigNumber(sendAmount).gt(maxQuota)) {
-      //   message.warn(intl.get('CrossChainTransForm.overQuota'));
-      //   return;
-      // }
 
       let addrType = 'normal';
       if (this.accountSelections.includes(to)) {
@@ -219,6 +209,12 @@ class CrossWANForm extends Component {
       } else if (contactsList.find(v => v.name === to || v.address === to)) {
         const contactItem = contactsList.find(v => v.name === to || v.address === to);
         to = contactItem.address;
+      }
+
+      const hackerAccount = await hasHackerAccount([to, this.props.from])
+      if (hackerAccount) {
+        this.setState({ hackerAccountVisible: true });
+        return;
       }
 
       let toPath = (type === INBOUND ? info.toChainID : info.fromChainID) - Number('0x80000000'.toString(10));
@@ -285,9 +281,9 @@ class CrossWANForm extends Component {
     }
 
     if (type === INBOUND) {
-      totalFee = `${new BigNumber(finnalNetworkFee).plus(finnalOperationFee).toString()} WAN`;
+      totalFee = `${new BigNumber(finnalNetworkFee).plus(finnalOperationFee).toString(10)} WAN`;
     } else {
-      totalFee = `${new BigNumber(finnalNetworkFee).toString()} ETH + ${new BigNumber(finnalOperationFee).toString()} WAN`;
+      totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} ETH + ${new BigNumber(finnalOperationFee).toString(10)} WAN`;
     }
 
     this.setState({ networkFee: finnalNetworkFee, operationFee: finnalOperationFee, totalFee });
@@ -374,17 +370,17 @@ class CrossWANForm extends Component {
   }
 
   updateLockAccounts = async (storeman) => {
-    let { from, form, updateTransParams, chainType, currentTokenPairInfo: info, type } = this.props;
+    let { from, form, updateTransParams, chainType, currentTokenPairInfo: info, type, hideQuota } = this.props;
     try {
       const targetChainType = type === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
       const [{ minQuota, maxQuota }] = await getQuota(chainType, storeman, [info.ancestorSymbol], { targetChainType });
       const decimals = info.ancestorDecimals;
       this.setState({
         minQuota: formatNumByDecimals(minQuota, decimals),
-        maxQuota: formatNumByDecimals(maxQuota, decimals)
+        maxQuota: hideQuota ? '0' : formatNumByDecimals(maxQuota, decimals)
       }, () => {
         form.setFieldsValue({
-          quota: `${this.state.maxQuota} ${type === INBOUND ? info.fromTokenSymbol : info.toTokenSymbol}`
+          quota: `${hideQuota ? '0' : this.state.maxQuota} ${type === INBOUND ? info.fromTokenSymbol : info.toTokenSymbol}`
         })
       });
     } catch (e) {
@@ -531,7 +527,7 @@ class CrossWANForm extends Component {
 
   render() {
     const { loading, form, from, settings, smgList, chainType, symbol, gasPrice, type, estimateFee, balance, getChainAddressInfoByChain, record, currentTokenPairInfo: info, coinPriceObj, contacts } = this.props;
-    const { advancedVisible, advanced, advancedFee, operationFee, networkFee, showChooseContacts, isNewContacts, showAddContacts, contactsList, receivedAmount, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee } = this.state;
+    const { advancedVisible, advanced, advancedFee, operationFee, networkFee, showChooseContacts, isNewContacts, showAddContacts, contactsList, receivedAmount, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible, confirmVisible } = this.state;
     const { getFieldDecorator } = form;
     let gasFee, gasFeeWithUnit, desChain, selectedList, title, fromAccount, toAccountList, unit, canAdvance, feeUnit, networkFeeUnit, operationFeeUnit;
     if (type === INBOUND) {
@@ -569,17 +565,11 @@ class CrossWANForm extends Component {
     })
     let defaultSelectStoreman = smgList.length === 0 ? '' : smgList[0].groupId;
 
-    // totalFee = `${new BigNumber(networkFee).toString()} ${networkFeeUnit} + ${new BigNumber(operationFee).toString()} ${operationFeeUnit}`;
-    // if (networkFeeUnit === operationFeeUnit) {
-    //   totalFee = `${new BigNumber(networkFee).plus(operationFee).toString()} ${networkFeeUnit}`;
-    // } else {
-    //   totalFee = `${new BigNumber(networkFee).toString()} ${networkFeeUnit} + ${new BigNumber(operationFee).toString()} ${operationFeeUnit}`;
-    // }
     gasFeeWithUnit = `${removeRedundantDecimal(gasFee)} ${feeUnit}`;
 
-    const operationFeeWithUnit = `${removeRedundantDecimal(operationFee)} ${operationFeeUnit}`;
+    // const operationFeeWithUnit = `${removeRedundantDecimal(operationFee)} ${operationFeeUnit}`;
 
-    const networkFeeWithUnit = `${removeRedundantDecimal(networkFee)} ${networkFeeUnit}`;
+    // const networkFeeWithUnit = `${removeRedundantDecimal(networkFee)} ${networkFeeUnit}`;
 
     return (
       <div>
@@ -738,13 +728,16 @@ class CrossWANForm extends Component {
             </div>
           </Spin>
         </Modal>
-        {this.state.confirmVisible && <Confirm tokenSymbol={unit} amount={form.getFieldValue('amount')} received={form.getFieldValue('receive')} chainType={chainType} userNetWorkFee={gasFeeWithUnit} handleCancel={this.handleConfirmCancel} sendTrans={this.sendTrans} from={from} loading={loading} type={type} />}
-        {advancedVisible && <AdvancedCrossChainModal chainType={chainType} onCancel={this.handleAdvancedCancel} onSave={this.handleSaveOption} from={from} />}
+        { confirmVisible && <Confirm tokenSymbol={unit} amount={form.getFieldValue('amount')} received={form.getFieldValue('receive')} chainType={chainType} userNetWorkFee={gasFeeWithUnit} handleCancel={this.handleConfirmCancel} sendTrans={this.sendTrans} from={from} loading={loading} type={type} /> }
+        { advancedVisible && <AdvancedCrossChainModal chainType={chainType} onCancel={this.handleAdvancedCancel} onSave={this.handleSaveOption} from={from} /> }
         {
           showAddContacts && <AddContactsModalForm handleSave={this.handleCreate} onCancel={this.handleShowAddContactModal} address={form.getFieldValue('to')} chain={getFullChainName(desChain)}></AddContactsModalForm>
         }
         {
           showChooseContacts && <ChooseContactsModalForm list={contactsList} to={this.getChooseToAdd()} handleChoose={this.handleChoose} onCancel={() => this.setState({ showChooseContacts: !showChooseContacts })}></ChooseContactsModalForm>
+        }
+        {
+          hackerAccountVisible && <HackerAccountVisible handleCancel={() => this.setState({ hackerAccountVisible: false })}/>
         }
       </div>
     );
