@@ -47,7 +47,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   const { status: estimateCrossChainOperationFeeStatus, value: estimateCrossChainOperationFee, execute: executeEstimateCrossChainOperationFee } = useAsync('crossChain_estimateCrossChainOperationFee', { value: '0', isPercent: false, minFeeLimit: '0', maxFeeLimit: '0', discountPercent: '1' }, false);
 
   const { status: fetchQuotaStatus, value: quotaList, execute: executeGetQuota } = useAsync('crossChain_getQuota', [{}], false);
-  const { status: getChainQuotaHiddenFlagDirectionallyStatus, value: hideQuotaChains } = useAsync('crossChain_getChainQuotaHiddenFlagDirectionally', null, true, { chainIds: [fromChainID, toChainID] });
+  const { status: getChainQuotaHiddenFlagDirectionallyStatus, value: hideQuotaChains } = useAsync('crossChain_getChainQuotaHiddenFlagDirectionally', null, true, { chainIds: type === INBOUND ? [fromChainID, toChainID] : [toChainID, fromChainID] });
   const { status: fetchFeeStatus, value: estimatedFee, execute: executeEstimatedFee } = useAsync('crossChain_estimatedXrpFee', '0', false);
   const { status: fetchGasPrice, value: gasPrice } = useAsync('query_getGasPrice', '0', type === OUTBOUND, { chainType: toChainSymbol });
   const { value: getAllBalances } = useAsync('address_getAllBalances', [{ currency: 'XRP', value: [] }], type === INBOUND, { chainType: type === INBOUND ? fromChainSymbol : toChainSymbol, address });
@@ -86,6 +86,9 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   }, [fetchGroupListStatus, fetchQuotaStatus, estimateCrossChainOperationFeeStatus, estimateCrossChainNetworkFeeStatus, fetchGasPrice, fetchFeeStatus, handleNextStatus])
 
   const maxQuota = useMemo(() => {
+    const { fromChainID: fromID, toChainID: toID } = crossChain.currentTokenPairInfo
+    const fromChainID = type === INBOUND ? fromID : toID;
+    const toChainID = type === INBOUND ? toID : fromID;
     let hideQuota = false;
     if (hideQuotaChains) {
       if (hideQuotaChains[fromChainID] && (hideQuotaChains[fromChainID].hiddenSourceChainQuota === true)) {
@@ -252,7 +255,8 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
 
       const hackerAccount = await hasHackerAccount([toAddr, address])
       if (hackerAccount) {
-        setHackerAccountVisible(true)
+        setHackerAccountVisible(true);
+        setHandleNextStatus(false);
         return;
       }
 

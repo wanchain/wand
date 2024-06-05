@@ -5,7 +5,7 @@ import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
 import { getGasPrice, getReadyOpenStoremanGroupList, getChainQuotaHiddenFlagDirectionally } from 'utils/helper';
 import CrossWANForm from 'components/CrossChain/CrossChainTransForm/CrossWANForm';
-import { FAST_GAS } from 'utils/settings';
+import { INBOUND, FAST_GAS } from 'utils/settings';
 
 const TransForm = Form.create({ name: 'CrossWANForm' })(CrossWANForm);
 
@@ -31,7 +31,7 @@ class WANTrans extends Component {
   }
 
   showModal = async () => {
-    const { from, path, addCrossTransTemplate, updateTransParams, tokenPairs, chainPairId, chainType, record, currentTokenPairInfo } = this.props;
+    const { from, path, addCrossTransTemplate, updateTransParams, tokenPairs, chainPairId, chainType, record, currentTokenPairInfo, type } = this.props;
     if (!(chainPairId in tokenPairs)) {
       return false;
     }
@@ -42,7 +42,9 @@ class WANTrans extends Component {
     this.setState({ visible: true, loading: true, spin: true });
     addCrossTransTemplate(from, { chainType, path, walletID: record.wid });
     try {
-      const { fromChainID, toChainID } = currentTokenPairInfo;
+      const { fromChainID: fromID, toChainID: toID } = currentTokenPairInfo;
+      const fromChainID = type === INBOUND ? fromID : toID;
+      const toChainID = type === INBOUND ? toID : fromID;
       let hideQuota = false;
       let [gasPrice, smgList, hideQuotaChains] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID])]);
       if (smgList.length === 0) {

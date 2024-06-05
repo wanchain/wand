@@ -38,7 +38,9 @@ class BTCTrans extends Component {
       addCrossTransTemplate(from, { chainType, path, walletID: record.walletID });
     }
     try {
-      const { fromChainID, toChainID } = info;
+      const { fromChainID: fromID, toChainID: toID } = info;
+      const fromChainID = direction === INBOUND ? fromID : toID;
+      const toChainID = direction === INBOUND ? toID : fromID;
       let [smgList, hideQuotaChains] = await Promise.all([getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID])]);
       smgList = smgList.filter(smg => Number(smg.curve1) === 0 || Number(smg.curve2) === 0);
       if (smgList.length === 0) {

@@ -48,7 +48,9 @@ class Trans extends Component {
     this.setState({ visible: true, spin: true, loading: true });
     addCrossTransTemplate(from, { chainType, path, walletID: record.walletID });
     try {
-      const { fromChainID, toChainID } = currentTokenPairInfo;
+      const { fromChainID: fromID, toChainID: toID } = currentTokenPairInfo;
+      const fromChainID = type === INBOUND ? fromID : toID;
+      const toChainID = type === INBOUND ? toID : fromID;
       let hideQuota = false;
       let [gasPrice, smgList, hideQuotaChains] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID])]);
       if (smgList.length === 0) {

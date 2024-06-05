@@ -648,9 +648,15 @@ class WanAddress {
 
   @computed get getAllAmount() {
     let sum = new BigNumber(0);
-    Object.values(self.addrInfo).forEach(value => {
-      sum = sum.plus(Object.values(value).reduce((prev, curr) => new BigNumber(prev).plus(new BigNumber(curr.balance)).plus(isNaN(curr.wbalance) ? new BigNumber(0) : new BigNumber(curr.wbalance)), 0));
-    });
+    if (session.settings.long_addresses) {
+      Object.values(self.addrInfo).forEach(value => {
+        sum = sum.plus(Object.values(value).reduce((prev, curr) => new BigNumber(prev).plus(new BigNumber(curr.balance)).plus(isNaN(curr.wbalance) ? new BigNumber(0) : new BigNumber(curr.wbalance)), 0));
+      });
+    } else {
+      Object.values(self.addrInfo).forEach(value => {
+        sum = sum.plus(Object.values(value).reduce((prev, curr) => new BigNumber(prev).plus(new BigNumber(curr.balance)), 0));
+      });
+    }
     return sum.toString(10);
   }
 }

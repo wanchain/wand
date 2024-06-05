@@ -64,7 +64,7 @@ class Login extends Component {
         }
         // Open scanner to scan the smart contract to get private tx balance.
         let scanOtaKeyList = Object.keys(this.props.settings.scan_ota_list);
-        if (scanOtaKeyList.length) {
+        if (scanOtaKeyList.length && this.props.settings.long_addresses) {
           openScanOTA(scanOtaKeyList.map(v => {
             let item = v.split('_');
             return [Number(item[0]), item[1]];

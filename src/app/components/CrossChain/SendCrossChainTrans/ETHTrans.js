@@ -37,7 +37,9 @@ class ETHTrans extends Component {
     this.setState({ visible: true, loading: true, spin: true });
     addCrossTransTemplate(from, { chainType, path, walletID: record.walletID });
     try {
-      const { fromChainID, toChainID } = currentTokenPairInfo;
+      const { fromChainID: fromID, toChainID: toID } = currentTokenPairInfo;
+      const fromChainID = type === INBOUND ? fromID : toID;
+      const toChainID = type === INBOUND ? toID : fromID;
       let hideQuota = false;
       let [gasPrice, smgList, hideQuotaChains, wanBridgeDiscounts] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID]), getWanBridgeDiscounts()]);
       if (smgList.length === 0) {
