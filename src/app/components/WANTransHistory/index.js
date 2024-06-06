@@ -13,6 +13,7 @@ const Option = Select.Option;
   isMainNetwork: stores.session.isMainNetwork,
   addrInfo: stores.wanAddress.addrInfo,
   language: stores.languageIntl.language,
+  settings: stores.session.settings,
   historyList: stores.wanAddress.historyList,
   privateHistoryList: stores.wanAddress.privateHistoryList,
   selectedAddr: stores.wanAddress.selectedAddr,
@@ -85,11 +86,14 @@ class WANTransHistory extends Component {
                 <Icon type="question-circle" />
               </Tooltip>
             </Radio>
-            <Radio value={'private'}>{intl.get('TransHistory.private')}
-              <Tooltip placement="bottom" title={intl.get('TransHistory.privateTooltip')} >
-                <Icon type="question-circle" />
-              </Tooltip>
-            </Radio>
+            {
+              this.props.settings.long_addresses &&
+              <Radio value={'private'}>{intl.get('TransHistory.private')}
+                <Tooltip placement="bottom" title={intl.get('TransHistory.privateTooltip')} >
+                  <Icon type="question-circle" />
+                </Tooltip>
+              </Radio>
+            }
           </Radio.Group>
         </div>
         <div className="historyRow">

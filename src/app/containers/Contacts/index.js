@@ -23,6 +23,7 @@ const { TabPane } = Tabs;
   normalData: stores.contacts.contacts.normalAddr,
   privateData: stores.contacts.contacts.privateAddr,
   contacts: stores.contacts.contacts,
+  settings: stores.session.settings,
   addAddress: (chain, addr, val) => stores.contacts.addAddress(chain, addr, val),
   addPrivateAddress: (addr, val) => stores.contacts.addPrivateAddress(addr, val),
   delAddress: (chain, addr) => stores.contacts.delAddress(chain, addr),
@@ -375,16 +376,19 @@ class Contacts extends Component {
               dataSource={rows}
             />
           </TabPane>
-          <TabPane tab={intl.get('AddressBook.privateAddrTab')} key="privateAddr">
-            <Table
-              pagination={false}
-              components={components}
-              columns={this.privateColumsTrees}
-              rowClassName={(record, index) => this.getRowClassName(record, index, privateRows)}
-              rowKey={record => record.chainSymbol + record.name + record.address}
-              dataSource={privateRows}
-            />
-          </TabPane>
+          {
+            this.props.settings.long_addresses &&
+              <TabPane tab={intl.get('AddressBook.privateAddrTab')} key="privateAddr">
+                <Table
+                  pagination={false}
+                  components={components}
+                  columns={this.privateColumsTrees}
+                  rowClassName={(record, index) => this.getRowClassName(record, index, privateRows)}
+                  rowKey={record => record.chainSymbol + record.name + record.address}
+                  dataSource={privateRows}
+                />
+              </TabPane>
+          }
         </Tabs>
         {
           showDeleteModal &&

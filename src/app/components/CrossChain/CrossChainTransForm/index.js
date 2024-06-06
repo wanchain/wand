@@ -505,8 +505,8 @@ class CrossChainTransForm extends Component {
   }
 
   handleCreate = (address, name) => {
-    const { currentTokenPairInfo: info, addAddress } = this.props;
-    const chainSymbol = getFullChainName(info.toChainSymbol);
+    const { currentTokenPairInfo: info, addAddress, type } = this.props;
+    const chainSymbol = getFullChainName(type === INBOUND ? info.toChainSymbol : info.fromChainSymbol);
     addAddress(chainSymbol, address, {
       name,
       address,
