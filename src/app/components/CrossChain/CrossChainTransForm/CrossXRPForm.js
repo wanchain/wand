@@ -497,7 +497,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   }
 
   const handleCreate = (address, name) => {
-    const chainSymbol = getFullChainName(type === INBOUND ? info.toChainSymbol : info.fromChainSymbol);
+    const chainSymbol = getFullChainName(type === INBOUND ? toChainSymbol : fromChainSymbol);
     addAddress(chainSymbol, address, {
       name,
       address,
