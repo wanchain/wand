@@ -8,12 +8,13 @@ export default function ToolTipCus({
   maxOperationFeeLimit,
   percentOperationFee,
   isPercentOperationFee,
+  wanBridgeDiscounts,
   symbol
 }) {
   return (
     <Tooltip
       placement="top"
-      title={<Content percentOperationFee={percentOperationFee} maxOperationFeeLimit={maxOperationFeeLimit} minOperationFeeLimit={minOperationFeeLimit} isPercentOperationFee={isPercentOperationFee} symbol={symbol}/>}
+      title={<Content wanBridgeDiscounts={wanBridgeDiscounts} percentOperationFee={percentOperationFee} maxOperationFeeLimit={maxOperationFeeLimit} minOperationFeeLimit={minOperationFeeLimit} isPercentOperationFee={isPercentOperationFee} symbol={symbol}/>}
       overlayClassName="ccToolTips"
       overlayStyle={{ borderRadius: '12px', fontSize: '12px' }}
     >
@@ -27,10 +28,11 @@ const Content = ({
   minOperationFeeLimit,
   maxOperationFeeLimit,
   isPercentOperationFee,
+  wanBridgeDiscounts,
   symbol
 }) => {
   const handleClick = () => {
-    wand.shell.openExternal('https://medium.com/wanchain-foundation/wanbridge-launches-a-brand-new-bridge-fee-charging-model-committed-to-promoting-the-sustainable-404c05a7a801')
+    wand.shell.openExternal('https://docs.wanchain.org')
   }
 
   const rate = useMemo(() => {
@@ -44,14 +46,24 @@ const Content = ({
 
   return (
     <div style={{ backgroundColor: '#3D3E53' }}>
-      <p style={{ marginBottom: '15px' }}>The Bridge Fee consists of <span style={{ color: '#2FBDF4' }}>"Network Fee + Service Fee"</span>.</p>
-      <p style={{ marginBottom: '15px' }}>If either your sending or receiving address on the Wanchain network holds 50,000 WAN or more, inclusive of WAN staked on Bridge node, you will enjoy a 50% discount on the Service Fee.</p>
+      <p style={{ marginBottom: '15px' }}>The Bridge Fee is composed of the <span style={{ color: '#2FBDF4' }}>"Network Fee + Service Fee"</span>.</p>
+      <p style={{ marginBottom: '15px' }}>Should either your sending or receiving address on the Wanchain network possess a designated amount of WAN (inclusive of amounts staked on a Bridge node), you are entitled to a discount on the Service Fee as outlined below:</p>
+      <p>Discount Tiers Based on WAN Holdings:</p>
+      {
+        wanBridgeDiscounts.map((i, index) => <p key={index}>{i.amount} WAN | {i.discount}% off</p>)
+      }
       <p style={{ marginTop: '10px' }}>
-        <span style={{ color: '#F1754B', display: 'block' }}>Note: </span>
-        Maintain a consistent WAN balance on your Wanchain address until your cross-chain assets are received to guarantee the discount is applied and avoid extra charges.
+        <span style={{ color: '#F1754B', display: 'block' }}>Applicable Service Fee Rules for your address:</span>
+        <span style={{ display: 'block' }}>- Service fee rate: {rate}</span>
+        <span style={{ display: 'block' }}>- Minimum service fee charge: {minOperationFeeLimit} {symbol}</span>
+        <span style={{ display: 'block' }}>- Maximum service fee charge: {maxOperationFeeLimit} {symbol}</span>
       </p>
       <p style={{ marginTop: '10px' }}>
-        For more details, go to <span style={{ color: '#2fbdf4', cursor: 'pointer' }} onClick={handleClick}>WanBridge Fee Charging Model</span>
+        <span style={{ color: '#F1754B', display: 'block' }}>Note:</span>
+        <span style={{ display: 'block' }}>To secure your discount, maintain a stable balance of WAN in your Wanchain address until the completion of your cross-chain transaction. This ensures the discount is applied and prevents additional charges.</span>
+      </p>
+      <p style={{ marginTop: '10px' }}>
+        For complete details, visit the <span style={{ color: '#2fbdf4', cursor: 'pointer' }} onClick={handleClick}>Wanchain Online Documentation</span>
       </p>
     </div>
   )

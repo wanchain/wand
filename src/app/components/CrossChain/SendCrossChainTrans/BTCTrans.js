@@ -3,9 +3,10 @@ import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
-import { getReadyOpenStoremanGroupList, getGasPrice, estimateSmartFee, getChainQuotaHiddenFlagDirectionally } from 'utils/helper';
+import { getReadyOpenStoremanGroupList, getGasPrice, estimateSmartFee, getChainQuotaHiddenFlagDirectionally, getWanBridgeDiscounts } from 'utils/helper';
 import { INBOUND, OUTBOUND, FAST_GAS } from 'utils/settings';
 import CrossBTCForm from 'components/CrossChain/CrossChainTransForm/CrossBTCForm';
+import { formatNum } from 'utils/support';
 
 const CollectionCreateForm = Form.create({ name: 'CrossBTCForm' })(CrossBTCForm);
 
@@ -28,7 +29,8 @@ class BTCTrans extends Component {
     visible: false,
     smgList: [],
     estimateFee: 0,
-    hideQuota: false
+    hideQuota: false,
+    wanBridgeDiscounts: []
   }
 
   showModal = async () => {
@@ -41,7 +43,7 @@ class BTCTrans extends Component {
       const { fromChainID: fromID, toChainID: toID } = info;
       const fromChainID = direction === INBOUND ? fromID : toID;
       const toChainID = direction === INBOUND ? toID : fromID;
-      let [smgList, hideQuotaChains] = await Promise.all([getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID])]);
+      let [smgList, hideQuotaChains, wanBridgeDiscountsData] = await Promise.all([getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID]), getWanBridgeDiscounts()]);
       smgList = smgList.filter(smg => Number(smg.curve1) === 0 || Number(smg.curve2) === 0);
       if (smgList.length === 0) {
         this.setState(() => ({ visible: false, spin: false, loading: false }));
@@ -75,12 +77,16 @@ class BTCTrans extends Component {
           hideQuota = true;
         }
       }
+      const wanBridgeDiscounts = wanBridgeDiscountsData.map(val => {
+        return { amount: formatNum(new BigNumber(val.amount).dividedBy(Math.pow(10, 18)).toString(10)), discount: new BigNumber(100).minus(new BigNumber(val.discount).dividedBy(Math.pow(10, 18)).multipliedBy(100)).toString(10) }
+      })
       this.setState({
         smgList,
         estimateFee,
         spin: false,
         loading: false,
-        hideQuota
+        hideQuota,
+        wanBridgeDiscounts
       });
     } catch (err) {
       console.log('showModal:', err);
@@ -107,7 +113,7 @@ class BTCTrans extends Component {
   }
 
   render() {
-    const { visible, loading, spin, smgList, estimateFee, hideQuota } = this.state;
+    const { visible, loading, spin, smgList, estimateFee, hideQuota, wanBridgeDiscounts } = this.state;
     const { from, getAmount, direction, getTokensListInfo, name } = this.props;
     let balance;
     if (direction === INBOUND) {
@@ -120,7 +126,7 @@ class BTCTrans extends Component {
       <div>
         <Button type="primary" onClick={this.showModal} >{intl.get('Common.convert')}</Button>
         { visible &&
-          <CollectionCreateForm name={name} from={this.props.from} hideQuota={hideQuota} balance={balance} direction={this.props.direction} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
+          <CollectionCreateForm wanBridgeDiscounts={wanBridgeDiscounts} name={name} from={this.props.from} hideQuota={hideQuota} balance={balance} direction={this.props.direction} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
         }
       </div>
     );

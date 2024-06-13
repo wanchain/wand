@@ -3,9 +3,10 @@ import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
-import { getGasPrice, getReadyOpenStoremanGroupList, getChainQuotaHiddenFlagDirectionally } from 'utils/helper';
+import { getGasPrice, getReadyOpenStoremanGroupList, getChainQuotaHiddenFlagDirectionally, getWanBridgeDiscounts } from 'utils/helper';
 import CrossWANForm from 'components/CrossChain/CrossChainTransForm/CrossWANForm';
 import { INBOUND, FAST_GAS } from 'utils/settings';
+import { formatNum } from 'utils/support';
 
 const TransForm = Form.create({ name: 'CrossWANForm' })(CrossWANForm);
 
@@ -27,7 +28,8 @@ class WANTrans extends Component {
     estimateFee: 0,
     tokenAddr: '',
     gasPrice: 0,
-    hideQuota: false
+    hideQuota: false,
+    wanBridgeDiscounts: []
   }
 
   showModal = async () => {
@@ -46,7 +48,7 @@ class WANTrans extends Component {
       const fromChainID = type === INBOUND ? fromID : toID;
       const toChainID = type === INBOUND ? toID : fromID;
       let hideQuota = false;
-      let [gasPrice, smgList, hideQuotaChains] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID])]);
+      let [gasPrice, smgList, hideQuotaChains, wanBridgeDiscountsData] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID]), getWanBridgeDiscounts()]);
       if (smgList.length === 0) {
         message.warn(intl.get('SendNormalTrans.smgUnavailable'));
         this.setState({ visible: false, spin: false, loading: false });
@@ -59,11 +61,15 @@ class WANTrans extends Component {
           hideQuota = true;
         }
       }
+      const wanBridgeDiscounts = wanBridgeDiscountsData.map(val => {
+        return { amount: formatNum(new BigNumber(val.amount).dividedBy(Math.pow(10, 18)).toString(10)), discount: new BigNumber(100).minus(new BigNumber(val.discount).dividedBy(Math.pow(10, 18)).multipliedBy(100)).toString(10) }
+      })
       this.setState({
         smgList,
         estimateFee: new BigNumber(gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10),
         gasPrice,
-        hideQuota
+        hideQuota,
+        wanBridgeDiscounts
       });
       storeman = smgList[0].groupId;
       updateTransParams(from, {
@@ -98,13 +104,13 @@ class WANTrans extends Component {
   }
 
   render() {
-    const { visible, loading, spin, smgList, estimateFee, tokenAddr, gasPrice, hideQuota } = this.state;
+    const { visible, loading, spin, smgList, estimateFee, tokenAddr, gasPrice, hideQuota, wanBridgeDiscounts } = this.state;
     const { balance, from, type, account, record } = this.props;
     return (
       <div>
         <Button type="primary" onClick={this.showModal}>{intl.get('Common.convert')}</Button>
         {visible &&
-          <TransForm balance={balance} from={from} account={account} gasPrice={gasPrice} hideQuota={hideQuota} tokenAddr={tokenAddr} record={record} chainType={this.props.chainType} type={type} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
+          <TransForm wanBridgeDiscounts={wanBridgeDiscounts} balance={balance} from={from} account={account} gasPrice={gasPrice} hideQuota={hideQuota} tokenAddr={tokenAddr} record={record} chainType={this.props.chainType} type={type} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
         }
       </div>
     );

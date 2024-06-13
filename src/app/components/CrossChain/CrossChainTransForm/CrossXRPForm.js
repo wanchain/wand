@@ -48,6 +48,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
 
   const { status: fetchQuotaStatus, value: quotaList, execute: executeGetQuota } = useAsync('crossChain_getQuota', [{}], false);
   const { status: getChainQuotaHiddenFlagDirectionallyStatus, value: hideQuotaChains } = useAsync('crossChain_getChainQuotaHiddenFlagDirectionally', null, true, { chainIds: type === INBOUND ? [fromChainID, toChainID] : [toChainID, fromChainID] });
+  const { status: getWanBridgeDiscountsStatus, value: wanBridgeDiscountsData } = useAsync('crossChain_getWanBridgeDiscounts', null, true, {});
   const { status: fetchFeeStatus, value: estimatedFee, execute: executeEstimatedFee } = useAsync('crossChain_estimatedXrpFee', '0', false);
   const { status: fetchGasPrice, value: gasPrice } = useAsync('query_getGasPrice', '0', type === OUTBOUND, { chainType: toChainSymbol });
   const { value: getAllBalances } = useAsync('address_getAllBalances', [{ currency: 'XRP', value: [] }], type === INBOUND, { chainType: type === INBOUND ? fromChainSymbol : toChainSymbol, address });
@@ -104,6 +105,16 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
     return formatNumByDecimals(quotaList[0].minQuota, ancestorDecimals)
   }, [quotaList])
 
+  const wanBridgeDiscounts = useMemo(() => {
+    if (wanBridgeDiscountsData) {
+      return wanBridgeDiscountsData.map(val => {
+        return { amount: formatNum(new BigNumber(val.amount).dividedBy(Math.pow(10, 18)).toString(10)), discount: new BigNumber(100).minus(new BigNumber(val.discount).dividedBy(Math.pow(10, 18)).multipliedBy(100)).toString(10) }
+      })
+    } else {
+      return []
+    }
+  }, [getWanBridgeDiscountsStatus])
+
   const minReserveXrp = useMemo(() => {
     return (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * 2 + MINXRPBALANCE;
   }, [getAllBalances])
@@ -142,14 +153,14 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
       let amount = new BigNumber(estimateCrossChainNetworkFee.value).multipliedBy(estimateCrossChainNetworkFee.discountPercent || 1).toString(10);
       setNetworkFee(type === INBOUND ? formatNumByDecimals(amount, ancestorDecimals) : fromWei(amount));
     }
-  }, [estimateCrossChainNetworkFee])
+  }, [estimateCrossChainNetworkFee, estimateCrossChainNetworkFeeStatus])
 
   useEffect(() => {
     if (!estimateCrossChainOperationFee.isPercent) {
       const amount = new BigNumber(estimateCrossChainOperationFee.value).multipliedBy(estimateCrossChainOperationFee.discountPercent || 1).toString(10);
       setOperationFee(formatNumByDecimals(amount, ancestorDecimals));
     }
-  }, [estimateCrossChainOperationFee])
+  }, [estimateCrossChainOperationFee, estimateCrossChainOperationFeeStatus])
 
   useEffect(() => {
     if (form.getFieldValue('amount')) {
@@ -652,7 +663,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
               options={{ initialValue: crosschainFee }}
               prefix={<Icon type="credit-card" className="colorInput" />}
               title={intl.get('CrossChainTransForm.crosschainFee')}
-              tooltips={<ToolTipCus minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={estimateCrossChainOperationFee.isPercent ? estimateCrossChainOperationFee.value : 0} isPercentOperationFee={estimateCrossChainOperationFee.isPercent} symbol='XRP'/>}
+              tooltips={<ToolTipCus wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={estimateCrossChainOperationFee.isPercent ? estimateCrossChainOperationFee.value : 0} isPercentOperationFee={estimateCrossChainOperationFee.isPercent} symbol='XRP'/>}
             />
             <CommonFormItem
               form={form}

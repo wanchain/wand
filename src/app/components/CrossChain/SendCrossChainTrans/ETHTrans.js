@@ -5,7 +5,8 @@ import { observer, inject } from 'mobx-react';
 import { message, Button, Form } from 'antd';
 import { getGasPrice, getReadyOpenStoremanGroupList, getChainQuotaHiddenFlagDirectionally, getWanBridgeDiscounts } from 'utils/helper';
 import CrossETHForm from 'components/CrossChain/CrossChainTransForm/CrossETHForm';
-import { INBOUND, LOCKETH_GAS, REDEEMWETH_GAS, LOCKWETH_GAS, REDEEMETH_GAS, FAST_GAS } from 'utils/settings';
+import { INBOUND, FAST_GAS } from 'utils/settings';
+import { formatNum } from 'utils/support';
 
 const CollectionCreateForm = Form.create({ name: 'CrossETHForm' })(CrossETHForm);
 
@@ -27,7 +28,8 @@ class ETHTrans extends Component {
     smgList: [],
     estimateFee: 0,
     gasPrice: 0,
-    hideQuota: false
+    hideQuota: false,
+    wanBridgeDiscounts: []
   }
 
   showModal = async () => {
@@ -41,7 +43,8 @@ class ETHTrans extends Component {
       const fromChainID = type === INBOUND ? fromID : toID;
       const toChainID = type === INBOUND ? toID : fromID;
       let hideQuota = false;
-      let [gasPrice, smgList, hideQuotaChains, wanBridgeDiscounts] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID]), getWanBridgeDiscounts()]);
+      let [gasPrice, smgList, hideQuotaChains, wanBridgeDiscountsData] = await Promise.all([getGasPrice(chainType), getReadyOpenStoremanGroupList(), getChainQuotaHiddenFlagDirectionally([fromChainID, toChainID]), getWanBridgeDiscounts()]);
+
       if (smgList.length === 0) {
         this.setState(() => ({ visible: false, spin: false, loading: false }));
         message.warn(intl.get('SendNormalTrans.smgUnavailable'));
@@ -54,11 +57,15 @@ class ETHTrans extends Component {
           hideQuota = true;
         }
       }
+      const wanBridgeDiscounts = wanBridgeDiscountsData.map(val => {
+        return { amount: formatNum(new BigNumber(val.amount).dividedBy(Math.pow(10, 18)).toString(10)), discount: new BigNumber(100).minus(new BigNumber(val.discount).dividedBy(Math.pow(10, 18)).multipliedBy(100)).toString(10) }
+      })
       this.setState({
         smgList,
         estimateFee: new BigNumber(gasPrice).times(FAST_GAS).div(BigNumber(10).pow(9)).toString(10),
         gasPrice,
-        hideQuota
+        hideQuota,
+        wanBridgeDiscounts
       });
       let storeman = smgList[0].groupId;
       updateTransParams(from, {
@@ -93,13 +100,13 @@ class ETHTrans extends Component {
   }
 
   render() {
-    const { visible, loading, spin, smgList, estimateFee, gasPrice, hideQuota } = this.state;
+    const { visible, loading, spin, smgList, estimateFee, gasPrice, hideQuota, wanBridgeDiscounts } = this.state;
     const { balance, from, type, account, decimals, symbol, tokenAddr, chainType } = this.props;
     return (
       <div>
         <Button type="primary" onClick={this.showModal} /* disabled={Number(balance) === 0} */>{intl.get('Common.convert')}</Button>
         {visible &&
-          <CollectionCreateForm balance={balance} from={from} account={account} hideQuota={hideQuota} gasPrice={gasPrice} decimals={decimals} tokenAddr={tokenAddr} symbol={symbol} chainType={chainType} type={type} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
+          <CollectionCreateForm wanBridgeDiscounts={wanBridgeDiscounts} balance={balance} from={from} account={account} hideQuota={hideQuota} gasPrice={gasPrice} decimals={decimals} tokenAddr={tokenAddr} symbol={symbol} chainType={chainType} type={type} estimateFee={estimateFee} smgList={smgList} wrappedComponentRef={this.saveFormRef} onCancel={this.handleCancel} onSend={this.handleSend} loading={loading} spin={spin} />
         }
       </div>
     );

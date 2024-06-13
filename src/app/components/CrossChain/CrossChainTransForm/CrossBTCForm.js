@@ -152,6 +152,7 @@ class CrossBTCForm extends Component {
     const { toChainSymbol, ancestorDecimals } = info;
 
     estimateCrossChainOperationFee(direction === INBOUND ? 'BTC' : toChainSymbol, direction === INBOUND ? toChainSymbol : 'BTC', { tokenPairID: currTokenPairId, address: [from, toAddrsss] }).then(res => {
+      console.log('res', res)
       this.setState({
         operationFeeRaw: res.isPercent ? '0' : formatNumByDecimals(res.value, ancestorDecimals),
         operationFee: res.isPercent ? '0' : formatNumByDecimals(res.value, ancestorDecimals),
@@ -623,7 +624,7 @@ class CrossBTCForm extends Component {
   }
 
   render() {
-    const { loading, form, from, settings, smgList, estimateFee, direction, addrInfo, balance, currentTokenPairInfo: info, getChainAddressInfoByChain, coinPriceObj, name } = this.props;
+    const { loading, form, from, settings, smgList, estimateFee, direction, addrInfo, balance, currentTokenPairInfo: info, getChainAddressInfoByChain, coinPriceObj, name, wanBridgeDiscounts } = this.props;
     const { advancedVisible, feeRate, receive, sendAll, isNewContacts, showAddContacts, showChooseContacts, contactsList, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible } = this.state;
     const { getFieldDecorator } = form;
     let gasFee, gasFeeWithUnit, desChain, defaultSelectStoreman, title, unit, toUnit, feeUnit, operationFeeUnit, networkFeeUnit;
@@ -631,12 +632,6 @@ class CrossBTCForm extends Component {
     if (direction === INBOUND) {
       desChain = info.toChainSymbol;
       title = `${info.fromTokenSymbol}@${info.fromChainName} -> ${info.toTokenSymbol}@${info.toChainName}`;
-      // Convert the value of fee to USD
-      // if ((typeof coinPriceObj === 'object') && info.fromChainSymbol in coinPriceObj) {
-      //   totalFee = `${new BigNumber(this.state.fee).times(coinPriceObj[info.fromChainSymbol]).toString()} USD`;
-      // } else {
-      //   totalFee = `${this.state.fee} ${info.fromChainSymbol}`;
-      // }
       gasFeeWithUnit = `${this.state.fee} ${info.fromChainSymbol}`;
       feeUnit = info.fromChainSymbol;
       operationFeeUnit = 'BTC';
@@ -644,12 +639,6 @@ class CrossBTCForm extends Component {
     } else {
       desChain = info.fromChainSymbol;
       title = `${info.toTokenSymbol}@${info.toChainName} -> ${info.fromTokenSymbol}@${info.fromChainName}`;
-      // Convert the value of fee to USD
-      // if ((typeof coinPriceObj === 'object') && info.toChainSymbol in coinPriceObj) {
-      //   totalFee = `${new BigNumber(estimateFee).times(coinPriceObj[info.toChainSymbol]).toString()} USD`;
-      // } else {
-      //   totalFee = `${estimateFee} ${info.toChainSymbol}`;
-      // }
       gasFeeWithUnit = `${removeRedundantDecimal(estimateFee)} ${info.toChainSymbol}`;
       feeUnit = info.toChainSymbol;
       operationFeeUnit = 'BTC';
@@ -668,21 +657,6 @@ class CrossBTCForm extends Component {
       }
       defaultSelectStoreman = smgList[0].groupId;
     }
-
-    // totalFee = `${new BigNumber(networkFee).toString()} ${networkFeeUnit} + ${new BigNumber(operationFee).toString()} ${operationFeeUnit}`;
-
-    // Swap NetworkFee and OperationFee display positions
-    // if (new BigNumber(networkFee).isEqualTo(0) && new BigNumber(operationFee).gt('0')) {
-    //   totalFee = `${new BigNumber(operationFee).toString()} ${operationFeeUnit} + ${new BigNumber(networkFee).toString()} ${networkFeeUnit}`;
-    // } else {
-    //   totalFee = `${new BigNumber(networkFee).toString()} ${networkFeeUnit} + ${new BigNumber(operationFee).toString()} ${operationFeeUnit}`;
-    // }
-
-    // if (networkFeeUnit === operationFeeUnit) {
-    //   totalFee = `${new BigNumber(networkFee).plus(operationFee).toString()} ${networkFeeUnit}`;
-    // } else {
-    //   totalFee = `${new BigNumber(networkFee).toString()} ${networkFeeUnit} + ${new BigNumber(operationFee).toString()} ${operationFeeUnit}`;
-    // }
 
     return (
       <div>
@@ -820,7 +794,7 @@ class CrossBTCForm extends Component {
                 options={{ initialValue: totalFee }}
                 prefix={<Icon type="credit-card" className="colorInput" />}
                 title={intl.get('CrossChainTransForm.crosschainFee')}
-                tooltips={<ToolTipCus minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='WAN'/>}
+                tooltips={<ToolTipCus wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='BTC'/>}
               />
               <CommonFormItem
                 form={form}
