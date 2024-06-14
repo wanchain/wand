@@ -6,7 +6,7 @@ import style from './index.less';
 import { defaultTimeout } from 'utils/settings';
 import PasswordConfirmForm from 'components/PasswordConfirmForm';
 // import ConfirmDeleteToken from './ConfirmDeleteToken';
-import { openScanOTA, stopScanOTA } from 'utils/helper';
+import { openScanOTA, stopScanOTA, initScanOTA } from 'utils/helper';
 
 const { Option } = Select;
 const PwdConfirmForm = Form.create({ name: 'PasswordConfirmForm' })(PasswordConfirmForm);
@@ -46,13 +46,15 @@ class Config extends Component {
 
   handleLongAddresses = e => {
     if (e.target.checked) {
-      const scanOtaKeyList = Object.keys(this.props.settings.scan_ota_list);
-      if (scanOtaKeyList.length) {
-        openScanOTA(scanOtaKeyList.map(v => {
-          let item = v.split('_');
-          return [Number(item[0]), item[1]];
-        }));
-      }
+      initScanOTA().then(() => {
+        const scanOtaKeyList = Object.keys(this.props.settings.scan_ota_list);
+        if (scanOtaKeyList.length) {
+          openScanOTA(scanOtaKeyList.map(v => {
+            let item = v.split('_');
+            return [Number(item[0]), item[1]];
+          }));
+        }
+      });
     } else {
       stopScanOTA();
     }
