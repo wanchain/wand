@@ -266,10 +266,11 @@ class CrossWANForm extends Component {
       const tmp1 = tmp.lt(minNetworkFeeLimit)
                               ? minNetworkFeeLimit
                               : (!new BigNumber(maxNetworkFeeLimit).eq('0') && tmp.gt(maxNetworkFeeLimit)) ? maxNetworkFeeLimit : tmp.toString();
-      finnalNetworkFee = new BigNumber(tmp1).multipliedBy(discountPercentNetworkFee).toString()
+      finnalNetworkFee = new BigNumber(tmp1).multipliedBy(discountPercentNetworkFee).toString(10)
     } else {
       finnalNetworkFee = new BigNumber(networkFeeRaw).multipliedBy(discountPercentNetworkFee).toString(10);
     }
+
     if (isPercentOperationFee) {
       const tmp = new BigNumber(value).multipliedBy(percentOperationFee);
       const tmp1 = tmp.lt(minOperationFeeLimit)
@@ -280,11 +281,7 @@ class CrossWANForm extends Component {
       finnalOperationFee = new BigNumber(operationFeeRaw).multipliedBy(discountPercentOperationFee).toString(10);
     }
 
-    if (type === INBOUND) {
-      totalFee = `${new BigNumber(finnalNetworkFee).plus(finnalOperationFee).toString(10)} WAN`;
-    } else {
-      totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} ETH + ${new BigNumber(finnalOperationFee).toString(10)} WAN`;
-    }
+    totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} ${type === INBOUND ? 'WAN' : 'ETH'} + ${new BigNumber(finnalOperationFee).toString(10)} WAN`;
 
     this.setState({ networkFee: finnalNetworkFee, operationFee: finnalOperationFee, totalFee });
 
@@ -527,7 +524,7 @@ class CrossWANForm extends Component {
 
   render() {
     const { loading, form, from, settings, smgList, chainType, symbol, gasPrice, type, estimateFee, balance, getChainAddressInfoByChain, record, currentTokenPairInfo: info, wanBridgeDiscounts } = this.props;
-    const { advancedVisible, advanced, advancedFee, operationFee, networkFee, showChooseContacts, isNewContacts, showAddContacts, contactsList, receivedAmount, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible, confirmVisible } = this.state;
+    const { advancedVisible, advanced, advancedFee, operationFee, networkFee, showChooseContacts, isNewContacts, showAddContacts, contactsList, receivedAmount, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible, confirmVisible, discountPercentOperationFee } = this.state;
     const { getFieldDecorator } = form;
     let gasFee, gasFeeWithUnit, desChain, selectedList, title, fromAccount, toAccountList, unit, canAdvance, feeUnit, networkFeeUnit, operationFeeUnit;
     if (type === INBOUND) {
@@ -702,7 +699,7 @@ class CrossWANForm extends Component {
                 options={{ initialValue: totalFee }}
                 prefix={<Icon type="credit-card" className="colorInput" />}
                 title={intl.get('CrossChainTransForm.crosschainFee')}
-                tooltips={<ToolTipCus wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='WAN'/>}
+                tooltips={<ToolTipCus discountPercentOperationFee={discountPercentOperationFee} wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='WAN'/>}
               />
               <CommonFormItem
                 form={form}

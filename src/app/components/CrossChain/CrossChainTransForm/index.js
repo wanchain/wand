@@ -294,11 +294,7 @@ class CrossChainTransForm extends Component {
       networkFeeUnit = info.toChainSymbol;
     }
 
-    if (networkFeeUnit === operationFeeUnit) {
-      totalFee = `${new BigNumber(finnalNetworkFee).plus(finnalOperationFee).toString(10)} ${networkFeeUnit}`;
-    } else {
-      totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} ${networkFeeUnit} + ${new BigNumber(finnalOperationFee).toString(10)} ${operationFeeUnit}`;
-    }
+    totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} ${networkFeeUnit} + ${new BigNumber(finnalOperationFee).toString(10)} ${operationFeeUnit}`;
 
     this.setState({ networkFee: finnalNetworkFee, operationFee: finnalOperationFee, totalFee });
     return [finnalNetworkFee, finnalOperationFee];
@@ -542,7 +538,7 @@ class CrossChainTransForm extends Component {
   render() {
     const { loading, form, from, settings, smgList, gasPrice, chainType, balance, type, account, getChainAddressInfoByChain, currentTokenPairInfo: info, wanBridgeDiscounts } = this.props;
     const { getFieldDecorator } = form;
-    const { advancedVisible, advanced, advancedFee, operationFee, showChooseContacts, isNewContacts, showAddContacts, contactsList, networkFee, receivedAmount, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible } = this.state;
+    const { advancedVisible, advanced, advancedFee, operationFee, showChooseContacts, isNewContacts, showAddContacts, contactsList, networkFee, receivedAmount, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible, discountPercentOperationFee } = this.state;
     let gasFee, gasFeeWithUnit, desChain, title, tokenSymbol, toAccountList, quotaUnit, canAdvance, feeUnit, networkFeeUnit, operationFeeUnit;
     if (type === INBOUND) {
       desChain = info.toChainSymbol;
@@ -706,7 +702,7 @@ class CrossChainTransForm extends Component {
                 options={{ initialValue: totalFee }}
                 prefix={<Icon type="credit-card" className="colorInput" />}
                 title={intl.get('CrossChainTransForm.crosschainFee')}
-                tooltips={<ToolTipCus wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol={info.ancestorSymbol} />}
+                tooltips={<ToolTipCus discountPercentOperationFee={discountPercentOperationFee} wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol={info.ancestorSymbol} />}
               />
               <CommonFormItem
                 form={form}

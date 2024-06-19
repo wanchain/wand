@@ -137,11 +137,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   }, [estimatedFee, gasPrice, XRPCrossTransParams.gasLimit])
 
   const crosschainFee = useMemo(() => {
-    if (info.networkFeeUnit === info.operationFeeUnit) {
-      return `${new BigNumber(networkFee).plus(operationFee).toString(10)} ${info.networkFeeUnit}`;
-    } else {
-      return `${new BigNumber(networkFee).toString(10)} ${info.networkFeeUnit} + ${new BigNumber(operationFee).toString(10)} ${info.operationFeeUnit}`;
-    }
+    return `${new BigNumber(networkFee).toString(10)} ${info.networkFeeUnit} + ${new BigNumber(operationFee).toString(10)} ${info.operationFeeUnit}`;
   }, [fee, coinPriceObj, operationFee, networkFee]);
 
   const userNetWorkFee = useMemo(() => {
@@ -663,7 +659,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
               options={{ initialValue: crosschainFee }}
               prefix={<Icon type="credit-card" className="colorInput" />}
               title={intl.get('CrossChainTransForm.crosschainFee')}
-              tooltips={<ToolTipCus wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={estimateCrossChainOperationFee.isPercent ? estimateCrossChainOperationFee.value : 0} isPercentOperationFee={estimateCrossChainOperationFee.isPercent} symbol='XRP'/>}
+              tooltips={<ToolTipCus discountPercentOperationFee={estimateCrossChainOperationFee.discountPercent || 1} wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={estimateCrossChainOperationFee.isPercent ? estimateCrossChainOperationFee.value : 0} isPercentOperationFee={estimateCrossChainOperationFee.isPercent} symbol='XRP'/>}
             />
             <CommonFormItem
               form={form}

@@ -122,8 +122,8 @@ class CrossBTCForm extends Component {
 
   componentDidMount() {
     this.processContacts();
-    this.estimateNetworkFee();
-    this.estimateOperationFee();
+    this.estimateNetworkFee(this.accountDataSelections[0].address);
+    this.estimateOperationFee(this.accountDataSelections[0].address);
   }
 
   estimateNetworkFee = (toAddrsss = '') => {
@@ -150,9 +150,7 @@ class CrossBTCForm extends Component {
   estimateOperationFee = (toAddrsss = '') => {
     const { direction, currentTokenPairInfo: info, currTokenPairId, from, form } = this.props;
     const { toChainSymbol, ancestorDecimals } = info;
-
     estimateCrossChainOperationFee(direction === INBOUND ? 'BTC' : toChainSymbol, direction === INBOUND ? toChainSymbol : 'BTC', { tokenPairID: currTokenPairId, address: [from, toAddrsss] }).then(res => {
-      console.log('res', res)
       this.setState({
         operationFeeRaw: res.isPercent ? '0' : formatNumByDecimals(res.value, ancestorDecimals),
         operationFee: res.isPercent ? '0' : formatNumByDecimals(res.value, ancestorDecimals),
@@ -251,7 +249,6 @@ class CrossBTCForm extends Component {
           return;
         }
       }
-
       let walletID = addrType === 'normal' ? 1 : WALLETID[addrType.toUpperCase()]
       let toValue = isNativeAccount && addrType !== 'trezor';
       if (settings.reinput_pwd) {
@@ -313,11 +310,7 @@ class CrossBTCForm extends Component {
       finnalOperationFee = new BigNumber(operationFeeRaw).multipliedBy(discountPercentOperationFee).toString(10);
     }
 
-    if (direction === INBOUND) {
-      totalFee = `${new BigNumber(finnalNetworkFee).plus(finnalOperationFee).toString()} BTC`;
-    } else {
-      totalFee = `${new BigNumber(finnalNetworkFee).toString()} ${info.toChainSymbol} + ${new BigNumber(finnalOperationFee).toString()} BTC`;
-    }
+    totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} ${direction === INBOUND ? 'BTC' : info.toChainSymbol} + ${new BigNumber(finnalOperationFee).toString(10)} BTC`;
 
     this.setState({ networkFee: finnalNetworkFee, operationFee: finnalOperationFee, totalFee });
 
@@ -625,7 +618,7 @@ class CrossBTCForm extends Component {
 
   render() {
     const { loading, form, from, settings, smgList, estimateFee, direction, addrInfo, balance, currentTokenPairInfo: info, getChainAddressInfoByChain, coinPriceObj, name, wanBridgeDiscounts } = this.props;
-    const { advancedVisible, feeRate, receive, sendAll, isNewContacts, showAddContacts, showChooseContacts, contactsList, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible } = this.state;
+    const { advancedVisible, feeRate, receive, sendAll, isNewContacts, showAddContacts, showChooseContacts, contactsList, totalFee, minOperationFeeLimit, maxOperationFeeLimit, percentOperationFee, isPercentOperationFee, hackerAccountVisible, discountPercentOperationFee } = this.state;
     const { getFieldDecorator } = form;
     let gasFee, gasFeeWithUnit, desChain, defaultSelectStoreman, title, unit, toUnit, feeUnit, operationFeeUnit, networkFeeUnit;
     let otherAddrInfo = getChainAddressInfoByChain(info.toChainSymbol);
@@ -794,7 +787,7 @@ class CrossBTCForm extends Component {
                 options={{ initialValue: totalFee }}
                 prefix={<Icon type="credit-card" className="colorInput" />}
                 title={intl.get('CrossChainTransForm.crosschainFee')}
-                tooltips={<ToolTipCus wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='BTC'/>}
+                tooltips={<ToolTipCus discountPercentOperationFee={discountPercentOperationFee} wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='BTC'/>}
               />
               <CommonFormItem
                 form={form}

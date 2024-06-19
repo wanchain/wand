@@ -277,11 +277,8 @@ class CrossETHForm extends Component {
     } else {
       finnalOperationFee = new BigNumber(operationFeeRaw).multipliedBy(discountPercentOperationFee).toString(10);
     }
-    if (type === INBOUND) {
-      totalFee = `${new BigNumber(finnalNetworkFee).plus(finnalOperationFee).toString(10)} ETH`;
-    } else {
-      totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} WAN + ${new BigNumber(finnalOperationFee).toString(10)} ETH`;
-    }
+
+    totalFee = `${new BigNumber(finnalNetworkFee).toString(10)} ${type === INBOUND ? 'ETH' : 'WAN'} + ${new BigNumber(finnalOperationFee).toString(10)} ETH`;
 
     this.setState({ networkFee: finnalNetworkFee, operationFee: finnalOperationFee, totalFee });
 
@@ -522,7 +519,7 @@ class CrossETHForm extends Component {
 
   render() {
     const { loading, form, from, settings, smgList, gasPrice, chainType, balance, type, account, getChainAddressInfoByChain, currentTokenPairInfo: info, wanBridgeDiscounts } = this.props;
-    const { advancedVisible, advanced, advancedFee, confirmVisible, showChooseContacts, isNewContacts, showAddContacts, contactsList, receivedAmount, totalFee, isPercentOperationFee, percentOperationFee, minOperationFeeLimit, maxOperationFeeLimit, hackerAccountVisible } = this.state;
+    const { advancedVisible, advanced, advancedFee, confirmVisible, showChooseContacts, isNewContacts, showAddContacts, contactsList, receivedAmount, totalFee, isPercentOperationFee, percentOperationFee, minOperationFeeLimit, maxOperationFeeLimit, hackerAccountVisible, discountPercentOperationFee } = this.state;
     const { getFieldDecorator } = form;
     let gasFee, gasFeeWithUnit, desChain, selectedList, title, toAccountList, unit, canAdvance, feeUnit, networkFeeUnit, operationFeeUnit;
     if (type === INBOUND) {
@@ -706,7 +703,7 @@ class CrossETHForm extends Component {
                 options={{ initialValue: totalFee }}
                 prefix={<Icon type="credit-card" className="colorInput" />}
                 title={intl.get('CrossChainTransForm.crosschainFee')}
-                tooltips={<ToolTipCus wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='ETH' />}
+                tooltips={<ToolTipCus discountPercentOperationFee={discountPercentOperationFee} wanBridgeDiscounts={wanBridgeDiscounts} minOperationFeeLimit={minOperationFeeLimit} maxOperationFeeLimit={maxOperationFeeLimit} percentOperationFee={percentOperationFee} isPercentOperationFee={isPercentOperationFee} symbol='ETH' />}
               />
               <CommonFormItem
                 form={form}

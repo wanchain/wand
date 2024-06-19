@@ -9,12 +9,13 @@ export default function ToolTipCus({
   percentOperationFee,
   isPercentOperationFee,
   wanBridgeDiscounts,
+  discountPercentOperationFee,
   symbol
 }) {
   return (
     <Tooltip
       placement="top"
-      title={<Content wanBridgeDiscounts={wanBridgeDiscounts} percentOperationFee={percentOperationFee} maxOperationFeeLimit={maxOperationFeeLimit} minOperationFeeLimit={minOperationFeeLimit} isPercentOperationFee={isPercentOperationFee} symbol={symbol}/>}
+      title={<Content discountPercentOperationFee={discountPercentOperationFee} wanBridgeDiscounts={wanBridgeDiscounts} percentOperationFee={percentOperationFee} maxOperationFeeLimit={maxOperationFeeLimit} minOperationFeeLimit={minOperationFeeLimit} isPercentOperationFee={isPercentOperationFee} symbol={symbol}/>}
       overlayClassName="ccToolTips"
       overlayStyle={{ borderRadius: '12px', fontSize: '12px' }}
     >
@@ -29,6 +30,7 @@ const Content = ({
   maxOperationFeeLimit,
   isPercentOperationFee,
   wanBridgeDiscounts,
+  discountPercentOperationFee,
   symbol
 }) => {
   const handleClick = () => {
@@ -37,12 +39,20 @@ const Content = ({
 
   const rate = useMemo(() => {
     if (isPercentOperationFee) {
-      const ret = new BigNumber(percentOperationFee).multipliedBy(100).toString()
+      const ret = new BigNumber(percentOperationFee).multipliedBy(discountPercentOperationFee).multipliedBy(100).toString()
       return `${ret}%`;
     } else {
       return 'N/A'
     }
   }, [isPercentOperationFee, percentOperationFee])
+
+  const minOperationFee = useMemo(() => {
+    return new BigNumber(minOperationFeeLimit).multipliedBy(discountPercentOperationFee).toString(10);
+  }, [minOperationFeeLimit, discountPercentOperationFee])
+
+  const maxOperationFee = useMemo(() => {
+    return new BigNumber(maxOperationFeeLimit).multipliedBy(discountPercentOperationFee).toString(10);
+  }, [maxOperationFeeLimit, discountPercentOperationFee])
 
   return (
     <div style={{ backgroundColor: '#3D3E53' }}>
@@ -55,8 +65,8 @@ const Content = ({
       <p style={{ marginTop: '10px' }}>
         <span style={{ color: '#F1754B', display: 'block' }}>Applicable Service Fee Rules for your address:</span>
         <span style={{ display: 'block' }}>- Service fee rate: {rate}</span>
-        <span style={{ display: 'block' }}>- Minimum service fee charge: {minOperationFeeLimit} {symbol}</span>
-        <span style={{ display: 'block' }}>- Maximum service fee charge: {maxOperationFeeLimit} {symbol}</span>
+        <span style={{ display: 'block' }}>- Minimum service fee charge: {minOperationFee} {symbol}</span>
+        <span style={{ display: 'block' }}>- Maximum service fee charge: {maxOperationFee} {symbol}</span>
       </p>
       <p style={{ marginTop: '10px' }}>
         <span style={{ color: '#F1754B', display: 'block' }}>Note:</span>
