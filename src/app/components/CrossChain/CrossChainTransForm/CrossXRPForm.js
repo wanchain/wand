@@ -456,8 +456,13 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
           })
         }
       } else {
+        if (isNativeAccount) {
+          const to = getValueByNameInfoAllType(value, 'address', info.toAccountList)
+          estimateCrossFee(to);
+        } else {
+          estimateCrossFee(value);
+        }
         setIsNewContacts(false);
-        estimateCrossFee(value);
         callback();
       }
     } catch (err) {

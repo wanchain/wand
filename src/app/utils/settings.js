@@ -61,7 +61,7 @@ export const XRPMAIN = 'https://livenet.xrpl.org/transactions';
 export const XRPTESTNET = 'https://testnet.xrpl.org/transactions';
 
 export const ETHMAIN = 'https://etherscan.io';
-export const ETHTESTNET = 'https://goerli.etherscan.io';
+export const ETHTESTNET = 'https://sepolia.etherscan.io';
 
 export const EOSMAIN = 'https://bloks.io';
 export const EOSTESTNET = 'https://jungle.bloks.io';

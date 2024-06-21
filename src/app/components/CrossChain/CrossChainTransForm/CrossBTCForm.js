@@ -455,16 +455,23 @@ class CrossBTCForm extends Component {
   }
 
   checkTo = async (rule, value, callback) => {
-    const { currentTokenPairInfo: info, direction, hasSameContact } = this.props;
-    let toChain = direction === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
+    const { currentTokenPairInfo: info, direction, hasSameContact, getChainAddressInfoByChain } = this.props;
+    const toChain = direction === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
+    const toAddrInfo = getChainAddressInfoByChain(info[direction === INBOUND ? 'toChainSymbol' : 'fromChainSymbol']);
     const chainSymbol = getFullChainName(toChain);
     const isNewContacts = hasSameContact(value, chainSymbol);
     if (this.accountSelections.includes(value) || this.addressSelections.includes(value)) {
       this.setState({
         isNewContacts: false
       });
-      this.estimateNetworkFee(value);
-      this.estimateOperationFee(value);
+      if (this.accountSelections.includes(value)) {
+        const to = getValueByNameInfoAllType(value, 'address', toAddrInfo);
+        this.estimateNetworkFee(to);
+        this.estimateOperationFee(to);
+      } else {
+        this.estimateNetworkFee(value);
+        this.estimateOperationFee(value);
+      }
       callback();
     } else {
       let isValid;

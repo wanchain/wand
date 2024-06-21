@@ -424,16 +424,23 @@ class CrossChainTransForm extends Component {
   }
 
   checkTo = async (rule, value, callback) => {
-    const { currentTokenPairInfo: info, type, hasSameContact } = this.props;
-    let chain = type === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
+    const { currentTokenPairInfo: info, type, hasSameContact, getChainAddressInfoByChain } = this.props;
+    const chain = type === INBOUND ? info.toChainSymbol : info.fromChainSymbol;
+    const toAddrInfo = getChainAddressInfoByChain(info[type === INBOUND ? 'toChainSymbol' : 'fromChainSymbol']);
     const chainSymbol = getFullChainName(chain);
     const isNewContacts = hasSameContact(value, chainSymbol);
     if (this.accountSelections.includes(value) || this.addressSelections.includes(value)) {
       this.setState({
         isNewContacts: false
       })
-      this.estimateNetworkFee(value);
-      this.estimateOperationFee(value);
+      if (this.accountSelections.includes(value)) {
+        const to = getValueByNameInfoAllType(value, 'address', toAddrInfo);
+        this.estimateNetworkFee(to);
+        this.estimateOperationFee(to);
+      } else {
+        this.estimateNetworkFee(value);
+        this.estimateOperationFee(value);
+      }
       callback();
     } else {
       let isValid;
