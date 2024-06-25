@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { notarize } = require('electron-notarize')
+const { notarize } = require('@electron/notarize')
 
 exports.default = async function notarizing(context) {
     const { electronPlatformName, appOutDir } = context;
@@ -16,7 +16,7 @@ exports.default = async function notarizing(context) {
     console.log('start notarizing...')
     try {
         return await notarize({
-            appBundleId: 'org.wallet.wanchain',
+            teamId: 'org.wallet.wanchain',
             appPath: `${appOutDir}/${appName}.app`,
             appleId: process.env.APPLEID,
             appleIdPassword: process.env.APPLEIDPASS,
