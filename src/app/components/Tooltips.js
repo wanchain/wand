@@ -36,24 +36,22 @@ export default function ToolTipCus({
   const Content = () => {
     return (
       <div style={{ backgroundColor: '#3D3E53' }}>
-        <p style={{ marginBottom: '15px' }}>The Bridge Fee is composed of the <span style={{ color: '#2FBDF4' }}>"Network Fee + Service Fee"</span>.</p>
-        <p style={{ marginBottom: '15px' }}>Should either your sending or receiving address on the Wanchain network possess a designated amount of WAN (inclusive of amounts staked on a Bridge node), you are entitled to a discount on the Service Fee as outlined below:</p>
-        <p>Discount Tiers Based on WAN Holdings:</p>
+        <p style={{ marginBottom: '15px' }}>There are two types of fees: a Network Fee and a Service Fee. The Network Fee covers the on-chain gas fees incurred by the Wanchain Bridge. The Service Fee is calculated as a percentage of your cross-chain transaction value.</p>
+        <p style={{ color: '#F1754B' }}>Discounts for WAN Holders</p>
+        <p style={{ marginTop: '10px' }}>WAN holders receive discounts — the more WAN you have, the greater the discount.</p>
+        <p style={{ marginTop: '10px' }}>If either your sending or receiving address has enough WAN, including WAN staked or delegated to a Wanchain Bridge Node, you are entitled to a discount on the Service Fee as outlined below:</p>
+        <p style={{ marginTop: '10px', color: '#F1754B' }}>Discount Tiers Based on WAN Holdings</p>
         {
           wanBridgeDiscounts.map((i, index) => <p key={index}>{i.amount} WAN | {i.discount}% off</p>)
         }
         <p style={{ marginTop: '10px' }}>
-          <span style={{ color: '#F1754B', display: 'block' }}>Applicable Service Fee Rules for your address:</span>
-          <span style={{ display: 'block' }}>- Service fee rate: {rate}</span>
-          <span style={{ display: 'block' }}>- Minimum service fee charge: {minOperationFee} {symbol}</span>
-          <span style={{ display: 'block' }}>- Maximum service fee charge: {maxOperationFee} {symbol}</span>
+          <span style={{ color: '#F1754B', display: 'block' }}>Your Service Fee Details:</span>
+          <span style={{ display: 'block' }}>- Rate: {rate}</span>
+          <span style={{ display: 'block' }}>- Minimum: {minOperationFee} {symbol}</span>
+          <span style={{ display: 'block' }}>- Maximum: {maxOperationFee} {symbol}</span>
         </p>
         <p style={{ marginTop: '10px' }}>
-          <span style={{ color: '#F1754B', display: 'block' }}>Note:</span>
-          <span style={{ display: 'block' }}>To secure your discount, maintain a stable balance of WAN in your Wanchain address until the completion of your cross-chain transaction. This ensures the discount is applied and prevents additional charges.</span>
-        </p>
-        <p style={{ marginTop: '10px' }}>
-          For complete details, visit the <span style={{ color: '#2fbdf4', cursor: 'pointer' }} onClick={handleClick}>Wanchain Online Documentation</span>
+          <span style={{ display: 'block' }}>To ensure your discount is applied, keep a stable balance of WAN in your address until your cross-chain transaction is complete. Stake WAN to a Wanchain Bridge Node using XStake. For full details, visit <span style={{ color: '#2fbdf4', cursor: 'pointer' }} onClick={handleClick}>Wanchain Online Documentation</span></span>
         </p>
       </div>
     )
