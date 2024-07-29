@@ -8,10 +8,13 @@ import CopyAndQrcode from 'components/CopyAndQrcode';
 import SendTokenNormalTrans from 'components/SendNormalTrans/SendTokenNormalTrans';
 import { WanTx, WanRawTx } from 'utils/hardwareUtils'
 import { checkAddrType, getWalletIdByType, getFullChainName } from 'utils/helper';
-import { WALLETID, TRANSTYPE, WANMAIN, WANTESTNET, BTCMAIN, BTCTESTNET, ETHMAIN, ETHTESTNET, BNBMAIN, BNBTESTNET } from 'utils/settings';
+import { WALLETID, TRANSTYPE, WANMAIN, WANTESTNET, BTCMAIN, BTCTESTNET, ETHMAIN, ETHTESTNET, BNBMAIN, BNBTESTNET, CHAINID, ETHCHAINID } from 'utils/settings';
 import { signTransaction } from 'componentUtils/trezor';
 import { formatNum } from 'utils/support';
 import style from './index.less';
+import * as ethUtil from 'ethereumjs-util';
+import Common from '@ethereumjs/common';
+import { TransactionFactory } from '@ethereumjs/tx';
 
 message.config({
   duration: 2,
@@ -70,28 +73,46 @@ class TokenTrans extends Component {
 
   sendLedgerTrans = (path, tx) => {
     message.info(intl.get('Ledger.signTransactionInLedger'));
-    let rawTx = {
+    const { chain, isMainNetwork } = this.props;
+    let chainId;
+    if (chain === 'WAN') {
+      chainId = isMainNetwork ? CHAINID.MAIN : CHAINID.TEST;
+    } else { // TODO: suuport other EVMs
+      chainId = isMainNetwork ? ETHCHAINID.MAIN : ETHCHAINID.TEST;
+    }
+    let formatTx = {
+      from: tx.from.toLowerCase(),
       to: tx.to,
-      value: 0,
+      value: '0x00',
       data: tx.data,
-      chainId: this.props.chainId,
+      chainId,
       nonce: '0x' + tx.nonce.toString(16),
       gasLimit: tx.gasLimit,
       gasPrice: '0x' + new BigNumber(tx.gasPrice).times(BigNumber(10).pow(9)).toString(16),
       Txtype: 1
-    }
+    };
+    console.log({ formatTx })
+    let rawTx;
+    const common = Common.custom({ chainId });
+    formatTx.chainId = (chainId === 888) ? 1 : 3;
+    formatTx.data = formatTx.data || '0x';
+    rawTx = new WanRawTx(formatTx).serialize().toString('hex');
+    console.log('sendLedgerTrans %s rawTx: %O', path, rawTx);
     return new Promise((resolve, reject) => {
-      wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx: new WanRawTx(rawTx).serialize() }, (err, sig) => {
+      wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx }, (err, sig) => {
         if (err) {
           message.warn(intl.get('Ledger.signTransactionFailed'));
+          console.error('sendLedgerTrans signTransaction: %O', err);
           reject(err);
-          console.log(`signLedgerTransaction: ${err}`);
         } else {
-          console.log('Signature: ', sig)
-          rawTx.v = sig.v;
-          rawTx.r = sig.r;
-          rawTx.s = sig.s;
-          resolve('0x' + new WanTx(rawTx).serialize().toString('hex'));
+          console.log('sendLedgerTrans signTransaction: %O', sig)
+          formatTx.v = sig.v;
+          formatTx.r = sig.r;
+          formatTx.s = sig.s;
+          let newTx = new WanTx(formatTx);
+          let signedTx = '0x' + newTx.serialize().toString('hex');
+          console.log('sendLedgerTrans %s signedTx: %O', path, signedTx);
+          resolve(signedTx);
         }
       });
     })
@@ -121,7 +142,7 @@ class TokenTrans extends Component {
 
   handleSend = from => {
     let params = this.props.transParams[from];
-    const { chain, symbol, getChainAddressInfoByChain } = this.props;
+    const { chain, symbol, getChainAddressInfoByChain, isMainNetwork } = this.props;
     let addrInfo = getChainAddressInfoByChain(chain);
 
     if (addrInfo === undefined) {
@@ -132,6 +153,7 @@ class TokenTrans extends Component {
     let type = checkAddrType(from, addrInfo);
     let walletID = getWalletIdByType(type);
     let trans = {
+      from,
       walletID,
       chainType: chain,
       symbol: symbol,
@@ -152,7 +174,7 @@ class TokenTrans extends Component {
       switch (type) {
         case 'ledger':
           this.sendLedgerTrans(params.path, trans).then(raw => {
-            wand.request('transaction_raw', { raw, chainType: 'WAN' }, (err, txHash) => {
+            wand.request('transaction_raw', { raw, chainType: chain }, (err, txHash) => {
               if (err) {
                 message.warn(intl.get('HwWallet.Accounts.sendTransactionFailed'));
                 reject(false); // eslint-disable-line prefer-promise-reject-errors
@@ -162,14 +184,14 @@ class TokenTrans extends Component {
                     txHash,
                     value: '0x0',
                     from: from.toLowerCase(),
-                    srcSCAddrKey: 'WAN',
-                    srcChainType: 'WAN',
-                    tokenSymbol: 'WAN',
+                    srcSCAddrKey: params.to,
+                    srcChainType: chain,
+                    tokenSymbol: symbol,
                     ...trans
                   },
                   satellite: trans.satellite
                 }, () => {
-                  this.props.getChainStoreInfoByChain(this.props.chain).updateTransHistory();
+                  this.props.getChainStoreInfoByChain(chain).updateTransHistory();
                 })
                 console.log('TxHash:', txHash);
                 message.success(intl.get('Send.transSuccess'));
@@ -179,10 +201,15 @@ class TokenTrans extends Component {
           }).catch(() => { reject(false) }); // eslint-disable-line prefer-promise-reject-errors
           break;
         case 'trezor':
+          let chainId;
+          if (chain === 'WAN') {
+            chainId = isMainNetwork ? CHAINID.MAIN : CHAINID.TEST;
+          } else { // TODO: suuport other EVMs
+            chainId = isMainNetwork ? ETHCHAINID.MAIN : ETHCHAINID.TEST;
+          }
           signTransaction(params.path, {
-            Txtype: 1,
             value: '0x',
-            chainId: this.props.chainId,
+            chainId,
             to: trans.to,
             data: trans.data,
             nonce: '0x' + trans.nonce.toString(16),
@@ -193,7 +220,7 @@ class TokenTrans extends Component {
               console.log('signTrezorTransaction:', _err)
               return;
             }
-            wand.request('transaction_raw', { raw, chainType: 'WAN' }, (err, txHash) => {
+            wand.request('transaction_raw', { raw, chainType: chain }, (err, txHash) => {
               if (err) {
                 message.warn(intl.get('HwWallet.Accounts.sendTransactionFailed'));
                 reject(err);
@@ -203,14 +230,14 @@ class TokenTrans extends Component {
                     txHash,
                     value: '0x0',
                     from: from.toLowerCase(),
-                    srcSCAddrKey: 'WAN',
-                    srcChainType: 'WAN',
-                    tokenSymbol: 'WAN',
+                    srcSCAddrKey: params.to,
+                    srcChainType: chain,
+                    tokenSymbol: symbol,
                     ...trans
                   },
                   satellite: trans.satellite
                 }, () => {
-                  this.props.getChainStoreInfoByChain(this.props.chain).updateTransHistory();
+                  this.props.getChainStoreInfoByChain(chain).updateTransHistory();
                 })
                 message.success(intl.get('Send.transSuccess'));
                 resolve(txHash);
@@ -234,7 +261,7 @@ class TokenTrans extends Component {
                 message.success(intl.get('Send.transSuccess'));
                 resolve(txHash)
               }
-              this.props.getChainStoreInfoByChain(this.props.chain).updateTransHistory();
+              this.props.getChainStoreInfoByChain(chain).updateTransHistory();
             }
           });
           break;
@@ -290,7 +317,7 @@ class TokenTrans extends Component {
         </Row>
         <Row className="mainBody">
           <Col>
-            <TokenTransHistory name={chain === 'WAN' ? ['normal', 'import', 'ledger', 'trezor', 'rawKey'] : ['normal', 'rawKey']} />
+            <TokenTransHistory name={chain === 'WAN' ? ['normal', 'import', 'ledger', 'trezor', 'rawKey'] : ['normal', 'ledger', 'trezor', 'rawKey']} />
           </Col>
         </Row>
       </div>

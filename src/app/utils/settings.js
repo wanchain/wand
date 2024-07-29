@@ -1,9 +1,14 @@
 export const MAIN = 'main';
 export const TESTNET = 'testnet';
 
-export const CHAINID = { // WAN, ETH
+export const CHAINID = { // WAN
+  MAIN: 888,
+  TEST: 999,
+}
+
+export const ETHCHAINID = {
   MAIN: 1,
-  TEST: 3,
+  TEST: 11155111,
 }
 
 export const BTCCHAINID = {

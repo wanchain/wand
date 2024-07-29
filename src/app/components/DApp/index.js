@@ -46,6 +46,9 @@ class DApp extends Component {
     const preload = await this.getPreloadFile()
     this.setState({ preload: preload });
     this.addEventListeners();
+    this.chainType = 'WAN';
+    this.chainId = await getChainId();
+    console.log('Dapp init chain: %s(%d), wanPath: %s', this.chainType, this.chainId, this.props.settings.wan_path);
   }
 
   addEventListeners = () => {
@@ -128,23 +131,8 @@ class DApp extends Component {
 
   loadNetworkId(msg) {
     msg.err = null;
-    msg.val = 3;
-    wand.request('query_config', {
-      param: 'network'
-    },
-      function (err, val) {
-        if (err) {
-          console.log('error printed inside callback: ', err);
-          msg.err = err;
-        } else {
-          if (val.network === 'testnet') {
-            msg.val = 3;
-          } else {
-            msg.val = 1;
-          }
-          this.sendToDApp(msg);
-        }
-      }.bind(this));
+    msg.val = this.chainId;
+    this.sendToDApp(msg);
   }
 
   async getWalletFromAddress(address) {
@@ -152,7 +140,7 @@ class DApp extends Component {
       if (!this.addresses[address]) {
         return '';
       }
-      const { addrInfo } = this.props;
+      let addrInfo = [888, 999].includes(this.chainId) ? this.props.addrInfo : this.props.addrInfoEth;
 
       let addrType = '';
       switch (this.addresses[address].walletID) {

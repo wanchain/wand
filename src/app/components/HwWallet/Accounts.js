@@ -3,7 +3,6 @@ import { Table, message, Row, Col } from 'antd';
 import { observer, inject } from 'mobx-react';
 import intl from 'react-intl-universal';
 import BigNumber from 'bignumber.js';
-
 import { formatNum } from 'utils/support';
 import { hasSameName } from 'utils/helper';
 import TransHistory from 'components/TransHistory';
@@ -71,6 +70,7 @@ class Accounts extends Component {
     let { to, amount, data, chainId, nonce, gasLimit, gasPrice, txType } = params;
 
     let rawTx = {
+      from,
       to,
       value: '0x' + new BigNumber(amount).times(BigNumber(10).pow(18)).toString(16),
       data,

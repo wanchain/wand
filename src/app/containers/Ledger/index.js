@@ -2,10 +2,11 @@ import React, { Component } from 'react';
 import { observer, inject } from 'mobx-react';
 import { message } from 'antd';
 import intl from 'react-intl-universal';
-
-import style from './index.less';
 import { WALLETID } from 'utils/settings';
-import { WanTx, WanRawTx } from 'utils/hardwareUtils'
+import { WanTx, WanRawTx } from 'utils/hardwareUtils';
+import * as ethUtil from 'ethereumjs-util';
+import Common from '@ethereumjs/common';
+import { TransactionFactory } from '@ethereumjs/tx';
 import Accounts from 'components/HwWallet/Accounts';
 import ConnectHwWallet from 'components/HwWallet/Connect';
 
@@ -80,21 +81,24 @@ class Ledger extends Component {
   }
 
   signTransaction = (path, tx, callback) => {
-    let rawTx = new WanRawTx(tx).serialize();
-
+    let common = Common.custom({ chainId: tx.chainId });
+    console.log('tx: %O', tx);
+    let ethTx = TransactionFactory.fromTxData(tx, { common });
+    console.log('ethTx: %O', ethTx);
+    let rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
+    console.log('rawTx: %O', rawTx);
     message.info(intl.get('Ledger.signTransactionInLedger'));
-    wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path: path, rawTx: rawTx }, (err, sig) => {
+    wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx }, (err, sig) => {
       if (err) {
         message.warn(intl.get('Ledger.signTransactionFailed'));
+        console.error('Sign Failed, path: %s, error: %O', path, err);
         callback(err, null);
-
-        console.log(`Sign Failed: ${err}`);
       } else {
         tx.v = sig.v;
         tx.r = sig.r;
         tx.s = sig.s;
-        let wTx = new WanTx(tx);
-        let signedTx = '0x' + wTx.serialize().toString('hex');
+        let newTx = TransactionFactory.fromTxData(tx, { common });
+        let signedTx = '0x' + newTx.serialize().toString('hex');
         console.log('Signed tx: ', signedTx);
         callback(null, signedTx);
       }
