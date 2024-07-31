@@ -94,9 +94,8 @@ class TokenTrans extends Component {
     console.log({ formatTx })
     let rawTx;
     const common = Common.custom({ chainId });
-    formatTx.chainId = (chainId === 888) ? 1 : 3;
-    formatTx.data = formatTx.data || '0x';
-    rawTx = new WanRawTx(formatTx).serialize().toString('hex');
+    const ethTx = TransactionFactory.fromTxData(formatTx, { common });
+    rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
     console.log('sendLedgerTrans %s rawTx: %O', path, rawTx);
     return new Promise((resolve, reject) => {
       wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx }, (err, sig) => {
@@ -109,7 +108,7 @@ class TokenTrans extends Component {
           formatTx.v = sig.v;
           formatTx.r = sig.r;
           formatTx.s = sig.s;
-          let newTx = new WanTx(formatTx);
+          let newTx = TransactionFactory.fromTxData(formatTx, { common });
           let signedTx = '0x' + newTx.serialize().toString('hex');
           console.log('sendLedgerTrans %s signedTx: %O', path, signedTx);
           resolve(signedTx);

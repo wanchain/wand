@@ -5,7 +5,7 @@ import { app, BrowserWindow, dialog, ipcMain as ipc } from 'electron'
 import Logger from '~/src/utils/Logger'
 import EventEmitter from 'events'
 import setting from '~/src/utils/Settings'
-import desktopIdle from 'desktop-idle'
+// import desktopIdle from 'desktop-idle'
 import i18n from '~/config/i18n'
 
 const MAX_LOCKTIME = Math.pow(2, 31) - 1
@@ -138,7 +138,7 @@ class Window extends EventEmitter {
                         this._idleChecker = null;
                     }
                     this._idleChecker = setInterval(() => {
-                        let idleTime = desktopIdle.getIdleTime();
+                        let idleTime = 1 // desktopIdle.getIdleTime();
                         this._logger.info(`user idle time in seconds is: ${idleTime}`);
                         if (idleTime * 1000 > lockTimeThreshold) {
                             this._logger.info('user idle or away from key board, lock the wallet');

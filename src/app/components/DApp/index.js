@@ -48,7 +48,7 @@ class DApp extends Component {
     this.addEventListeners();
     this.chainType = 'WAN';
     this.chainId = await getChainId();
-    console.log('Dapp init chain: %s(%d), wanPath: %s', this.chainType, this.chainId, this.props.settings.wan_path);
+    console.log('Dapp init chain: %s(%d), wanPath: %s', this.chainType, this.chainId);
   }
 
   addEventListeners = () => {
@@ -281,7 +281,7 @@ class DApp extends Component {
     let rawTx = {};
     rawTx.from = msg.message.from;
     rawTx.to = msg.message.to;
-    rawTx.value = amountWei ? '0x' + new BigNumber(amountWei).toString(16) : '0x00';
+    rawTx.value = amountWei ? '0x' + Number(amountWei).toString(16) : '0x00';
     rawTx.data = data;
     rawTx.nonce = '0x' + nonce.toString(16);
     rawTx.gasLimit = msg.message.gasLimit ? this.toHexString(msg.message.gasLimit) : `0x${(2000000).toString(16)}`;
