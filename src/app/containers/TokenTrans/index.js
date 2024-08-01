@@ -89,11 +89,12 @@ class TokenTrans extends Component {
       gasLimit: tx.gasLimit
     };
     fillRawTxGasPrice(tx, formatTx, true);
-    console.log({ formatTx })
     let common = Common.custom({ chainId }, { hardfork: Hardfork.London, eips: [1559] });
     let ethTx = TransactionFactory.fromTxData(formatTx, { common });
-    let rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
-    console.log('sendLedgerTrans %s rawTx: %O', path, rawTx);
+    let rawTx = ethTx.getMessageToSign(false);
+    if (formatTx.type !== '0x02') {
+      rawTx = ethUtil.rlp.encode(rawTx).toString('hex');
+    }
     return new Promise((resolve, reject) => {
       wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx }, (err, sig) => {
         if (err) {

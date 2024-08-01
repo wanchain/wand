@@ -84,11 +84,11 @@ class Ledger extends Component {
 
   signTransaction = (path, tx, callback) => {
     let common = Common.custom({ chainId: tx.chainId }, { hardfork: Hardfork.London, eips: [1559] });
-    console.log('tx: %O', tx);
     let ethTx = TransactionFactory.fromTxData(tx, { common });
-    console.log('ethTx: %O', ethTx);
-    let rawTx = ethUtil.rlp.encode(ethTx.getMessageToSign(false)).toString('hex');
-    console.log('rawTx: %O', rawTx);
+    let rawTx = ethTx.getMessageToSign(false);
+    if (tx.type !== '0x02') {
+      rawTx = ethUtil.rlp.encode(rawTx).toString('hex');
+    }
     message.info(intl.get('Ledger.signTransactionInLedger'));
     wand.request('wallet_signTransaction', { walletID: WALLETID.LEDGER, path, rawTx }, (err, sig) => {
       if (err) {
