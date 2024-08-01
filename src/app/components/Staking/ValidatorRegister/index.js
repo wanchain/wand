@@ -1,7 +1,6 @@
 import intl from 'react-intl-universal';
 import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
-import TrezorConnect from 'trezor-connect';
 import { observer, inject } from 'mobx-react';
 import { checkAmountUnit, getValueByAddrInfo, checkMaxFeeRate, getNonce, getGasPrice, getChainId, getContractAddr, getContractData } from 'utils/helper';
 import { isNumber } from 'utils/support';

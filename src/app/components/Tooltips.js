@@ -47,7 +47,8 @@ export default function ToolTipCus({
   }, [minOperationFeeLimit])
 
   const maxOperationFee = useMemo(() => {
-    return new BigNumber(maxOperationFeeLimit).multipliedBy(discountPercentOperationFee).toString(10);
+    const ret = new BigNumber(maxOperationFeeLimit).multipliedBy(discountPercentOperationFee).toString(10);
+    return new BigNumber(ret).gt(0) ? ret : 'Unlimited'
   }, [maxOperationFeeLimit, discountPercentOperationFee])
 
   const maxOperationFeeBefore = useMemo(() => {
@@ -56,6 +57,14 @@ export default function ToolTipCus({
 
   const isDiscount = useMemo(() => {
     return isPercentOperationFee && !new BigNumber(discountPercentOperationFee).eq('1')
+  }, [isPercentOperationFee, discountPercentOperationFee])
+
+  const isShowBeforeDiscountMin = useMemo(() => {
+    return isPercentOperationFee && !new BigNumber(discountPercentOperationFee).eq('1') && new BigNumber(minOperationFee).gt('0')
+  }, [isPercentOperationFee, discountPercentOperationFee])
+
+  const isShowBeforeDiscountMax = useMemo(() => {
+    return isPercentOperationFee && !new BigNumber(discountPercentOperationFee).eq('1') && maxOperationFee !== 'Unlimited' && new BigNumber(maxOperationFee).gt('0')
   }, [isPercentOperationFee, discountPercentOperationFee])
 
   const Content = () => {
@@ -72,8 +81,8 @@ export default function ToolTipCus({
         <p style={{ marginTop: '10px' }}>
           <span style={{ color: '#F1754B', display: 'block', textDecoration: 'underline' }}>Your Service Fee Details:</span>
           <span style={{ display: 'block' }}>- Rate: <span style={{ color: '#BBE2FF', fontWeight: 600 }}>{rate}</span>  { isDiscount && <span style={{ textDecoration: 'line-through' }}>{rateBeforeDiscount}</span>}</span>
-          <span style={{ display: 'block' }}>- Minimum: <span style={{ color: '#BBE2FF', fontWeight: 600 }}>{minOperationFee} {symbol}</span> { isDiscount && <span style={{ textDecoration: 'line-through' }}>{minOperationFeeBefore} {symbol}</span>}</span>
-          <span style={{ display: 'block' }}>- Maximum: <span style={{ color: '#BBE2FF', fontWeight: 600 }}>{maxOperationFee} {symbol}</span> { isDiscount && <span style={{ textDecoration: 'line-through' }}>{maxOperationFeeBefore} {symbol}</span>}</span>
+          <span style={{ display: 'block' }}>- Minimum: <span style={{ color: '#BBE2FF', fontWeight: 600 }}>{minOperationFee} {symbol}</span> { isShowBeforeDiscountMin && <span style={{ textDecoration: 'line-through' }}>{minOperationFeeBefore} {symbol}</span>}</span>
+          <span style={{ display: 'block' }}>- Maximum: <span style={{ color: '#BBE2FF', fontWeight: 600 }}>{maxOperationFee} {symbol}</span> { isShowBeforeDiscountMax && <span style={{ textDecoration: 'line-through' }}>{maxOperationFeeBefore} {symbol}</span>}</span>
         </p>
         <p style={{ marginTop: '10px' }}>
           <span style={{ display: 'block' }}>To ensure your discount is applied, keep a stable balance of WAN in your address until your cross-chain transaction is complete. Stake WAN to a Wanchain Bridge Node using <span style={{ color: '#2fbdf4', cursor: 'pointer' }} onClick={handleXStakeClick}>XStake</span>. For full details, visit <span style={{ color: '#2fbdf4', cursor: 'pointer' }} onClick={handleClick}>https://docs.wanchain.org</span></span>

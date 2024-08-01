@@ -1,7 +1,10 @@
 import { message } from 'antd';
 import intl from 'react-intl-universal';
-import TrezorConnect from 'trezor-connect';
+import TrezorConnect from '@trezor/connect-web';
 import { wandWrapper } from 'utils/support.js';
+
+import Common from '@ethereumjs/common';
+import { TransactionFactory } from '@ethereumjs/tx';
 
 const pu = require('promisefy-util');
 const WanTx = require('wanchainjs-tx');
@@ -31,7 +34,7 @@ export const trezorRawTx = async (param, BIP44Path) => {
 
 export const signTransaction = (path, tx, callback) => {
   TrezorConnect.ethereumSignTransaction({
-    path: path,
+    path,
     transaction: {
       to: tx.to,
       value: tx.value,
@@ -40,7 +43,6 @@ export const signTransaction = (path, tx, callback) => {
       nonce: tx.nonce,
       gasLimit: tx.gasLimit,
       gasPrice: tx.gasPrice,
-      txType: tx.Txtype
     }
   }).then((result) => {
     if (!result.success) {
@@ -52,9 +54,10 @@ export const signTransaction = (path, tx, callback) => {
     tx.v = result.payload.v;
     tx.r = result.payload.r;
     tx.s = result.payload.s;
-    let eTx = new WanTx(tx);
-    let signedTx = '0x' + eTx.serialize().toString('hex');
-    console.log('Signed transaction: ', signedTx);
+    const common = Common.custom({ chainId: tx.chainId });
+    let newTx = TransactionFactory.fromTxData(tx, { common });
+    let signedTx = '0x' + newTx.serialize().toString('hex');
+    console.log('Signed tx: ', signedTx);
     callback(null, signedTx);
   }).catch(err => callback(err));
 }

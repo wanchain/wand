@@ -1,6 +1,6 @@
 import intl from 'react-intl-universal';
 import React, { Component } from 'react';
-import TrezorConnect, { DEVICE_EVENT, DEVICE } from 'trezor-connect';
+import TrezorConnect, { DEVICE_EVENT, DEVICE } from '@trezor/connect-web';
 import { observer, inject } from 'mobx-react';
 import { Icon } from 'antd';
 import { signTransaction, getPublicKey, WAN_PATH } from 'componentUtils/trezor'
@@ -16,7 +16,7 @@ const CHAIN_TYPE = 'WAN';
 TrezorConnect.init({
   // connectSrc: 'file://' + __dirname + '/trezor-connect/', // for trezor-connect hosted locally set endpoint to application files (ignore this field for connect hosted online, connect.trezor.io will be used by default)
   // connectSrc: 'https://sisyfos.trezor.io/connect-electron/',
-  connectSrc: 'https://connect.trezor.io/8/',
+  connectSrc: 'https://connect.trezor.io/9/',
   popup: true, // use trezor-connect UI, set it to "false" to get "trusted" mode and get more UI_EVENTs to render your own UI
   webusb: false, // webusb is not supported in electron
   debug: false, // see whats going on inside iframe
