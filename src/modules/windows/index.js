@@ -36,7 +36,9 @@ class Window extends EventEmitter {
                 webgl: false,
                 webSecurity: true,
                 textAreasAreResizable: true,
-                webviewTag: true
+                webviewTag: true,
+                nodeIntegration: true,
+                nativeWindowOpen: true
             }
         }
         electronOptions = _.merge(electronOptions, opts.electronOptions);
@@ -138,7 +140,7 @@ class Window extends EventEmitter {
                         this._idleChecker = null;
                     }
                     this._idleChecker = setInterval(() => {
-                        let idleTime = 1 // desktopIdle.getIdleTime();
+                        let idleTime = desktopIdle.getIdleTime();
                         this._logger.info(`user idle time in seconds is: ${idleTime}`);
                         if (idleTime * 1000 > lockTimeThreshold) {
                             this._logger.info('user idle or away from key board, lock the wallet');
