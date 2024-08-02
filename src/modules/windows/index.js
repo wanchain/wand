@@ -5,7 +5,7 @@ import { app, BrowserWindow, dialog, ipcMain as ipc } from 'electron'
 import Logger from '~/src/utils/Logger'
 import EventEmitter from 'events'
 import setting from '~/src/utils/Settings'
-// import desktopIdle from 'desktop-idle'
+import desktopIdle from 'desktop-idle'
 import i18n from '~/config/i18n'
 
 const MAX_LOCKTIME = Math.pow(2, 31) - 1
