@@ -303,8 +303,13 @@ class OsmAppendAndExit extends Component {
         wkAddr: record.wkAddr,
       };
       wand.request('storeman_openStoremanAction', { tx, action: 'stakeOut', isEstimateFee: false }, (err, ret) => {
-        if (err) {
-          message.warn(intl.get('NormalTransForm.estimateGasFailed'));
+        if (err || (ret && !ret.code)) {
+          if (ret && !ret.code && ret.result.includes('insufficient funds for transfer')) {
+            message.warn(intl.get('NormalTransForm.insufficientFee'));
+          } else {
+            message.warn(intl.get('NormalTransForm.estimateGasFailed'));
+          }
+          this.setState({ visible: false });
         } else {
           let data = ret.result;
           data.estimateGas = new BigNumber(data.estimateGas).multipliedBy(1.6).toString(10);

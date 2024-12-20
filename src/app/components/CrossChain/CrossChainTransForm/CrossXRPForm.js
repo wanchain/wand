@@ -2,7 +2,7 @@ import intl from 'react-intl-universal';
 import { BigNumber } from 'bignumber.js';
 import React, { useState, useContext, useMemo, useEffect, useCallback } from 'react';
 import { observer, MobXProviderContext } from 'mobx-react';
-import { Button, Modal, Form, Icon, message, Spin, Checkbox, Tooltip, AutoComplete, Input, Row, Col } from 'antd';
+import { Button, Modal, Form, Icon, message, Spin, Checkbox, AutoComplete, Input, Row, Col } from 'antd';
 
 import style from './index.less';
 import useAsync from 'hooks/useAsync';
@@ -52,6 +52,7 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   const { status: fetchFeeStatus, value: estimatedFee, execute: executeEstimatedFee } = useAsync('crossChain_estimatedXrpFee', '0', false);
   const { status: fetchGasPrice, value: gasPrice } = useAsync('query_getGasPrice', '0', type === OUTBOUND, { chainType: toChainSymbol });
   const { value: getAllBalances } = useAsync('address_getAllBalances', [{ currency: 'XRP', value: [] }], type === INBOUND, { chainType: type === INBOUND ? fromChainSymbol : toChainSymbol, address });
+  const { status: getServerInfoStatus, value: getServerInfo } = useAsync('address_getServerInfo', null, true, { chainType: 'XRP' });
 
   const info = type === INBOUND ? {
     feeSymbol: fromChainSymbol,
@@ -83,8 +84,8 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   useEffect(() => estimateCrossFee(accountDataSelections[0].address), []);
 
   const spin = useMemo(() => {
-    return [fetchGroupListStatus, fetchQuotaStatus, estimateCrossChainOperationFeeStatus, estimateCrossChainNetworkFeeStatus, fetchGasPrice, fetchFeeStatus].includes('pending') || handleNextStatus;
-  }, [fetchGroupListStatus, fetchQuotaStatus, estimateCrossChainOperationFeeStatus, estimateCrossChainNetworkFeeStatus, fetchGasPrice, fetchFeeStatus, handleNextStatus])
+    return [fetchGroupListStatus, fetchQuotaStatus, estimateCrossChainOperationFeeStatus, estimateCrossChainNetworkFeeStatus, fetchGasPrice, fetchFeeStatus, getServerInfoStatus].includes('pending') || handleNextStatus;
+  }, [fetchGroupListStatus, fetchQuotaStatus, estimateCrossChainOperationFeeStatus, estimateCrossChainNetworkFeeStatus, fetchGasPrice, fetchFeeStatus, handleNextStatus, getServerInfoStatus])
 
   const maxQuota = useMemo(() => {
     const { fromChainID: fromID, toChainID: toID } = crossChain.currentTokenPairInfo
@@ -105,6 +106,14 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
     return formatNumByDecimals(quotaList[0].minQuota, ancestorDecimals)
   }, [quotaList])
 
+  const baseReserve = useMemo(() => {
+    if (getServerInfo && getServerInfo.validatedLedger) {
+      return getServerInfo.validatedLedger.reserveBaseXRP || MINXRPBALANCE
+    } else {
+      return MINXRPBALANCE;
+    }
+  }, [getServerInfo])
+
   const wanBridgeDiscounts = useMemo(() => {
     if (wanBridgeDiscountsData) {
       return wanBridgeDiscountsData.map(val => {
@@ -116,8 +125,9 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   }, [getWanBridgeDiscountsStatus])
 
   const minReserveXrp = useMemo(() => {
-    return (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * 2 + MINXRPBALANCE;
-  }, [getAllBalances])
+    const addrWithTokenType = (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * 2
+    return new BigNumber(addrWithTokenType).plus(baseReserve).toString(10)
+  }, [getAllBalances, baseReserve])
 
   const contactsList = useMemo(() => {
     const { normalAddr } = contacts;

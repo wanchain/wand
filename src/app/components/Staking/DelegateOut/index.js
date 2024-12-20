@@ -7,12 +7,15 @@ import { signTransaction } from 'componentUtils/trezor'
 import style from './index.less';
 import DelegateOutConfirmForm from '../DelegateOutConfirmForm';
 import { toWei } from 'utils/support.js';
-import { getNonce, getGasPrice, getContractAddr, getContractData, getChainId } from 'utils/helper';
+import { getNonce, getGasPrice, getContractAddr, getContractData, getChainId, getValueByAddrInfo } from 'utils/helper';
+import BigNumber from 'bignumber.js';
 
 const pu = require('promisefy-util');
 const DelegateOutForm = Form.create({ name: 'DelegateOutConfirmForm' })(DelegateOutConfirmForm);
+const gasLimit = 200000;
 
 @inject(stores => ({
+  addrInfo: stores.wanAddress.addrInfo,
   ledgerAddrList: stores.wanAddress.ledgerAddrList,
   trezorAddrList: stores.wanAddress.trezorAddrList,
   updateStakeInfo: () => stores.staking.updateStakeInfo(),
@@ -43,8 +46,11 @@ class DelegateOut extends Component {
     this.setState({
       confirmLoading: true
     });
+    let balance = 0;
     let from = this.props.record.accountAddress;
-    const { ledgerAddrList, trezorAddrList } = this.props;
+    const { ledgerAddrList, trezorAddrList, addrInfo } = this.props;
+    const gasPrice = await getGasPrice('wan');
+    const estimateGasFee = new BigNumber(gasPrice).multipliedBy(gasLimit).dividedBy(Math.pow(10, 9)).toString(10)
 
     const WALLET_ID_NATIVE = 0x01; // Native WAN HD wallet
     const WALLET_ID_LEDGER = 0x02;
@@ -55,7 +61,7 @@ class DelegateOut extends Component {
     for (let i = 0; i < ledgerAddrList.length; i++) {
       const hdAddr = ledgerAddrList[i].address;
       if (hdAddr.toLowerCase() === from.toLowerCase()) {
-        walletID = WALLET_ID_LEDGER
+        walletID = WALLET_ID_LEDGER;
         break;
       }
     }
@@ -63,9 +69,15 @@ class DelegateOut extends Component {
     for (let i = 0; i < trezorAddrList.length; i++) {
       const hdAddr = trezorAddrList[i].address;
       if (hdAddr.toLowerCase() === from.toLowerCase()) {
-        walletID = WALLET_ID_TREZOR
+        walletID = WALLET_ID_TREZOR;
         break;
       }
+    }
+    balance = getValueByAddrInfo(from, 'balance', addrInfo);
+
+    if (new BigNumber(balance).lt(estimateGasFee)) {
+      message.warn(intl.get('NormalTransForm.insufficientFee'));
+      return;
     }
 
     let tx = {

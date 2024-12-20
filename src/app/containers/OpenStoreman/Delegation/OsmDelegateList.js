@@ -5,7 +5,6 @@ import { observer, inject } from 'mobx-react';
 import style from './index.less';
 import OsmDelegateClaim from './OsmDelegateClaim'
 import DelegateAppendAndExit from './DelegateAppendAndExit';
-import Item from 'antd/lib/list/Item';
 
 @inject(stores => ({
   language: stores.languageIntl.language,
@@ -55,7 +54,7 @@ class OsmDelegateList extends Component {
       {
         ...osmDelegateListColumns[6],
         render: (text, record) =>
-          <div>
+          <div style={{ paddingTop: '5px' }}>
             <Row>
               <Col span={8} align="center"><DelegateAppendAndExit enableButton={record.quited} record={record} modifyType='top-up' /></Col>
               <Col span={8} align="center"><DelegateAppendAndExit enableButton={!(record.canDelegateOut && !record.quited) || record.canDelegateClaim} record={record} modifyType='exit' /></Col>
@@ -73,7 +72,6 @@ class OsmDelegateList extends Component {
 
   render() {
     let scrollObj = this.props.delegatorListData.length ? { x: 1200 } : {};
-
     return (
       <div className={style['OsmDelegateList']}>
         <Table scroll={scrollObj} columns={this.getColumns()} dataSource={this.props.delegatorListData} pagination={{ pageSize: 5, hideOnSinglePage: true }} />

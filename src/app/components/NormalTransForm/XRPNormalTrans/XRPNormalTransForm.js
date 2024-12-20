@@ -9,8 +9,8 @@ import useAsync from 'hooks/useAsync';
 import { checkAmountUnit, checkXRPAddr, getBalance, getAllBalancesFunc } from 'utils/helper';
 import ConfirmForm from 'components/NormalTransForm/XRPNormalTrans/XRPConfirmForm.js';
 import AddContactsModal from '../../AddContacts/AddContactsModal';
+import { MINXRPBALANCE } from 'utils/settings';
 
-const MINBALANCE = 10;
 const DEFAULTFEE = '0.000012'
 const Confirm = Form.create({ name: 'NormalTransForm' })(ConfirmForm);
 const AddContactsModalForm = Form.create({ name: 'AddContactsModal' })(AddContactsModal);
@@ -28,18 +28,19 @@ const XRPNormalTransForm = observer(({ from, form, balance, orignBalance, onCanc
   const [visibleTag, setVisibleTag] = useState(true);
   const { status: estimateSmartFeeStatus, value: estimateSmartFee } = useAsync('transaction_estimateSmartFee', DEFAULTFEE, true, { chainType: 'XRP' });
   const { status: getAllBalancesStatus, value: getAllBalances } = useAsync('address_getAllBalances', [{ currency: 'XRP', value: '0' }], true, { chainType: 'XRP', address: from });
+  const { status: getServerInfoStatus, value: getServerInfo } = useAsync('address_getServerInfo', null, true, { chainType: 'XRP' });
 
   const spin = useMemo(() => {
-    return [estimateSmartFeeStatus, getAllBalancesStatus].includes('pending');
-  }, [estimateSmartFeeStatus, getAllBalancesStatus])
+    return [estimateSmartFeeStatus, getAllBalancesStatus, getServerInfoStatus].includes('pending');
+  }, [estimateSmartFeeStatus, getAllBalancesStatus, getServerInfoStatus])
 
   const { getFieldDecorator } = form;
 
   useEffect(() => {
-    if ([estimateSmartFeeStatus, getAllBalancesStatus].includes('error')) {
+    if ([estimateSmartFeeStatus, getAllBalancesStatus, getServerInfoStatus].includes('error')) {
       message.warn(intl.get('network.down'));
     }
-  }, [estimateSmartFeeStatus, getAllBalancesStatus])
+  }, [estimateSmartFeeStatus, getAllBalancesStatus, getServerInfoStatus])
 
   useEffect(() => {
     processContacts();
@@ -51,9 +52,18 @@ const XRPNormalTransForm = observer(({ from, form, balance, orignBalance, onCanc
     setContactsList(contactsList);
   }
 
+  const baseReserve = useMemo(() => {
+    if (getServerInfo && getServerInfo.validatedLedger) {
+      return getServerInfo.validatedLedger.reserveBaseXRP || MINXRPBALANCE
+    } else {
+      return MINXRPBALANCE;
+    }
+  }, [getServerInfo])
+
   const minReserveXrp = useMemo(() => {
-    return (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * 2 + MINBALANCE;
-  }, [getAllBalances])
+    const addrWithTokenType = (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * 2
+    return new BigNumber(addrWithTokenType).plus(baseReserve).toString(10)
+  }, [getAllBalances, baseReserve])
 
   const renderOption = item => {
     return (
@@ -171,8 +181,9 @@ const XRPNormalTransForm = observer(({ from, form, balance, orignBalance, onCanc
       if (form.getFieldValue('to')) {
         const val = await getBalance([form.getFieldValue('to')], 'XRP');
         const addrBalances = await getAllBalancesFunc('XRP', form.getFieldValue('to'));
-        let toBalance = new BigNumber(Object.values(val)[0]);
-        const minReserveXrp_to = (addrBalances.length > 0 ? addrBalances.length - 1 : 0) * 2 + MINBALANCE;
+        const toBalance = new BigNumber(Object.values(val)[0]);
+        const addrWithTokenType = (addrBalances.length > 0 ? addrBalances.length - 1 : 0) * 2
+        const minReserveXrp_to = new BigNumber(addrWithTokenType).plus(baseReserve).toString(10);
         if (toBalance.lt(minReserveXrp_to) && new BigNumber(value).lt(minReserveXrp_to)) {
           callback(intl.get('Xrp.notExistAccount', { minReserveXrp: minReserveXrp_to }));
           return;

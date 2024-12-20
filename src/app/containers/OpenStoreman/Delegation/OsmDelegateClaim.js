@@ -11,7 +11,7 @@ import PwdForm from 'componentUtils/PwdForm';
 import { wandWrapper, fromWei } from 'utils/support.js';
 import CommonFormItem from 'componentUtils/CommonFormItem';
 import DelegationConfirmForm from './DelegationConfirmForm';
-import style from 'components/Staking/MyValidatorsList/index.less';
+import style from './btn.less';
 import { checkAmountUnit, getValueByAddrInfo } from 'utils/helper';
 
 const ACTION = 'delegateClaim';
@@ -265,8 +265,14 @@ class OsmDelegateClaim extends Component {
       wkAddr: record.wkAddr,
     };
     wand.request('storeman_openStoremanAction', { tx, action: ACTION, isEstimateFee: false }, (err, ret) => {
-      if (err) {
+      if (err || (ret && !ret.code)) {
         message.warn(intl.get('NormalTransForm.estimateGasFailed'));
+        if (ret && !ret.code && ret.result.includes('insufficient funds for transfer')) {
+            message.warn(intl.get('NormalTransForm.insufficientFee'));
+        } else {
+          message.warn(intl.get('NormalTransForm.estimateGasFailed'));
+        }
+        this.setState({ visible: false });
       } else {
         let data = ret.result;
         data.estimateGas = '1000000';

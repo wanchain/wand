@@ -555,7 +555,7 @@ ipc.on(ROUTE_ADDRESS, async (event, actionUni, payload) => {
                     balance = { [address]: balance }
                 }
             } catch (e) {
-                logger.error('Failed to get balance:');
+                logger.error('Failed to get balance:', e);
                 logger.error(e.message || e.stack)
                 err = e
             }
@@ -568,6 +568,19 @@ ipc.on(ROUTE_ADDRESS, async (event, actionUni, payload) => {
               ret = await ccUtil.getAllBalances(chainType, address, options);
           } catch (e) {
               logger.error('Get getAllBalances failed');
+              logger.error(e.message || e.stack)
+              err = e
+          }
+
+          sendResponse([ROUTE_ADDRESS, [action, id].join('#')].join('_'), event, { err: err, data: ret })
+          break
+
+        case 'getServerInfo':
+          try {
+              const { chainType } = payload;
+              ret = await ccUtil.getServerInfo(chainType);
+          } catch (e) {
+              logger.error('Get getServerInfo failed');
               logger.error(e.message || e.stack)
               err = e
           }
@@ -1558,7 +1571,6 @@ ipc.on(ROUTE_STAKING, async (event, actionUni, payload) => {
 
                 let gasLimit = 200000;
                 let gasPriceGwei = web3.utils.fromWei(gasPrice, 'gwei');;
-
                 let input = {
                     "from": tx.from,
                     "validatorAddr": tx.validator,

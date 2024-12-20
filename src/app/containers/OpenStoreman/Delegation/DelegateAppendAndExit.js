@@ -2,7 +2,7 @@ import intl from 'react-intl-universal';
 import React, { Component } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { observer, inject } from 'mobx-react';
-import { Button, Modal, Form, Icon, message, Spin } from 'antd';
+import { Button, Modal, Form, Icon, message, Spin, Tooltip } from 'antd';
 
 import './index.less';
 import { WALLETID } from 'utils/settings';
@@ -11,7 +11,7 @@ import { wandWrapper, fromWei } from 'utils/support';
 import { signTransaction } from 'componentUtils/trezor';
 import CommonFormItem from 'componentUtils/CommonFormItem';
 import DelegationConfirmForm from './DelegationConfirmForm';
-import style from 'components/Staking/MyValidatorsList/index.less';
+import style from './btn.less';
 import { getValueByAddrInfo, checkAmountUnit } from 'utils/helper';
 
 const MINAMOUNT = 1;
@@ -310,8 +310,13 @@ class DelegateAppendAndExit extends Component {
         wkAddr: record.wkAddr,
       };
       wand.request('storeman_openStoremanAction', { tx, action: 'delegateOut', isEstimateFee: false }, (err, ret) => {
-        if (err) {
-          message.warn(intl.get('NormalTransForm.estimateGasFailed'));
+        if (err || (ret && !ret.code)) {
+          if (ret && !ret.code && ret.result.includes('insufficient funds for transfer')) {
+            message.warn(intl.get('NormalTransForm.insufficientFee'));
+          } else {
+            message.warn(intl.get('NormalTransForm.estimateGasFailed'));
+          }
+          this.setState({ visible: false });
         } else {
           let data = ret.result;
           data.estimateGas = new BigNumber(data.estimateGas).multipliedBy(1.6).toString(10);
@@ -334,9 +339,21 @@ class DelegateAppendAndExit extends Component {
 
   render () {
     const { record, modifyType, enableButton } = this.props;
+    let title = ''
+
+    if (modifyType === 'top-up' && record.quited) {
+      title = 'You have already exited, cannot to top up.'
+    } else if (modifyType === 'exit' && !(record.canDelegateOut && !record.quited)) {
+      title = 'You have already exited, no need to exit again.'
+    } else if (modifyType === 'exit' && record.canDelegateClaim) {
+      title = 'The delegated WAN assets are in the exit process and cannot be topped up.'
+    }
+
     return (
       <div>
-        <Button className={style.modifyTopUpBtn} disabled={ enableButton } onClick={this.handleStateToggle} />
+        <Tooltip title={enableButton ? title : ''}>
+          <Button className={style.modifyTopUpBtn} disabled={enableButton} onClick={this.handleStateToggle} />
+        </Tooltip>
         { this.state.visible &&
           <DelegationModifyForm spin={this.state.spin} onCancel={this.handleSend} onSend={this.handleSend} record={record} modifyType={modifyType} txParams={this.state.txParams} />
         }
