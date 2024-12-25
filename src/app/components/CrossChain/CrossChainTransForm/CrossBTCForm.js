@@ -327,6 +327,7 @@ class CrossBTCForm extends Component {
         callback(message);
         return;
       }
+
       if (new BigNumber(value).lt(minQuota) || new BigNumber(value).lt(minCrossBTC)) {
         const min = Math.max(minQuota, minCrossBTC);
         let errText = `${intl.get('CrossChainTransForm.UnderFastMinimum')}: ${removeRedundantDecimal(min, 2)} ${info[direction === INBOUND ? 'fromTokenSymbol' : 'toTokenSymbol']}`;
@@ -386,6 +387,7 @@ class CrossBTCForm extends Component {
 
       callback();
     } catch (error) {
+      console.log('checkAmount: ', error)
       callback(message);
     }
   }
@@ -437,6 +439,7 @@ class CrossBTCForm extends Component {
       };
     }
     let param = direction === INBOUND ? { input, tokenPairID, sourceSymbol: info.fromChainSymbol, sourceAccount: info.fromAccount, destinationSymbol: info.toChainSymbol, destinationAccount: info.toAccount, type: 'LOCK' } : { input, tokenPairID, sourceSymbol: info.toChainSymbol, sourceAccount: info.toAccount, destinationSymbol: info.fromChainSymbol, destinationAccount: info.fromAccount, type: 'LOCK' };
+    console.log('getCrossChainContractData param:', param)
     return getCrossChainContractData(param);
   }
 

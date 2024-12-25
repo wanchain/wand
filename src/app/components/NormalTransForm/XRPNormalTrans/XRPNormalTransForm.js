@@ -60,10 +60,18 @@ const XRPNormalTransForm = observer(({ from, form, balance, orignBalance, onCanc
     }
   }, [getServerInfo])
 
+  const reservePerToken = useMemo(() => {
+    if (getServerInfo && getServerInfo.validatedLedger) {
+      return getServerInfo.validatedLedger.reserveIncrementXRP || 2
+    } else {
+      return 2;
+    }
+  }, [getServerInfo])
+
   const minReserveXrp = useMemo(() => {
-    const addrWithTokenType = (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * 2
+    const addrWithTokenType = (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * reservePerToken
     return new BigNumber(addrWithTokenType).plus(baseReserve).toString(10)
-  }, [getAllBalances, baseReserve])
+  }, [getAllBalances, baseReserve, reservePerToken])
 
   const renderOption = item => {
     return (
@@ -182,7 +190,7 @@ const XRPNormalTransForm = observer(({ from, form, balance, orignBalance, onCanc
         const val = await getBalance([form.getFieldValue('to')], 'XRP');
         const addrBalances = await getAllBalancesFunc('XRP', form.getFieldValue('to'));
         const toBalance = new BigNumber(Object.values(val)[0]);
-        const addrWithTokenType = (addrBalances.length > 0 ? addrBalances.length - 1 : 0) * 2
+        const addrWithTokenType = (addrBalances.length > 0 ? addrBalances.length - 1 : 0) * reservePerToken
         const minReserveXrp_to = new BigNumber(addrWithTokenType).plus(baseReserve).toString(10);
         if (toBalance.lt(minReserveXrp_to) && new BigNumber(value).lt(minReserveXrp_to)) {
           callback(intl.get('Xrp.notExistAccount', { minReserveXrp: minReserveXrp_to }));

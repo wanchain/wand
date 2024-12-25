@@ -114,6 +114,14 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
     }
   }, [getServerInfo])
 
+  const reservePerToken = useMemo(() => {
+    if (getServerInfo && getServerInfo.validatedLedger) {
+      return getServerInfo.validatedLedger.reserveIncrementXRP || 2
+    } else {
+      return 2;
+    }
+  }, [getServerInfo])
+
   const wanBridgeDiscounts = useMemo(() => {
     if (wanBridgeDiscountsData) {
       return wanBridgeDiscountsData.map(val => {
@@ -125,9 +133,9 @@ const CrossXRPForm = observer(({ form, toggleVisible, onSend }) => {
   }, [getWanBridgeDiscountsStatus])
 
   const minReserveXrp = useMemo(() => {
-    const addrWithTokenType = (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * 2
+    const addrWithTokenType = (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * reservePerToken
     return new BigNumber(addrWithTokenType).plus(baseReserve).toString(10)
-  }, [getAllBalances, baseReserve])
+  }, [getAllBalances, baseReserve, reservePerToken])
 
   const contactsList = useMemo(() => {
     const { normalAddr } = contacts;
