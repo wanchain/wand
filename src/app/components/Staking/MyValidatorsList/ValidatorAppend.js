@@ -88,7 +88,7 @@ class InForm extends Component {
     let lockTime = record.lockTime;
     let publicKey1 = record.publicKey1;
     let amount = form.getFieldValue('amount');
-    let path = type === 'normal' ? WANPATH + addrInfo[type][from].path : addrInfo[type][from].path;
+    let path = type === 'normal' || type === 'rawKey' ? WANPATH + addrInfo[type][from].path : addrInfo[type][from].path;
     let walletID = type !== 'normal' ? WALLETID[type.toUpperCase()] : WALLETID.NATIVE;
 
     let tx = {

@@ -78,7 +78,7 @@ class ModifyForm extends Component {
     let from = record.myAddress.addr;
     let type = record.myAddress.type;
     let walletID = type !== 'normal' ? WALLETID[type.toUpperCase()] : WALLETID.NATIVE;
-    let path = type !== 'normal' ? addrInfo[type][from].path : WANPATH + addrInfo[type][from].path;
+    let path = type !== 'normal' || type !== 'rawKey' ? addrInfo[type][from].path : WANPATH + addrInfo[type][from].path;
     let tx = {
       from: from,
       amount: 0,
