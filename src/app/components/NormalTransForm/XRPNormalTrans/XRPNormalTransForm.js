@@ -69,7 +69,8 @@ const XRPNormalTransForm = observer(({ from, form, balance, orignBalance, onCanc
   }, [getServerInfo])
 
   const minReserveXrp = useMemo(() => {
-    const addrWithTokenType = (getAllBalances.length > 0 ? getAllBalances.length - 1 : 0) * reservePerToken
+    const tokensQuantity = getAllBalances.length > 0 ? getAllBalances.length - 1 : 0;
+    const addrWithTokenType = new BigNumber(tokensQuantity).multipliedBy(reservePerToken).toString(10);
     return new BigNumber(addrWithTokenType).plus(baseReserve).toString(10)
   }, [getAllBalances, baseReserve, reservePerToken])
 

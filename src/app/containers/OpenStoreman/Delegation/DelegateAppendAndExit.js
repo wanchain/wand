@@ -310,6 +310,7 @@ class DelegateAppendAndExit extends Component {
         wkAddr: record.wkAddr,
       };
       wand.request('storeman_openStoremanAction', { tx, action: 'delegateOut', isEstimateFee: false }, (err, ret) => {
+        console.log('storeman_openStoremanAction', err, ret)
         if (err || (ret && !ret.code)) {
           if (ret && !ret.code && ret.result.includes('insufficient funds for transfer')) {
             message.warn(intl.get('NormalTransForm.insufficientFee'));
