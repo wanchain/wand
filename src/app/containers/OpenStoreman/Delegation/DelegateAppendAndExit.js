@@ -5,7 +5,7 @@ import { observer, inject } from 'mobx-react';
 import { Button, Modal, Form, Icon, message, Spin, Tooltip } from 'antd';
 
 import './index.less';
-import { WALLETID } from 'utils/settings';
+import { WALLETID, ESTFEE_FAILED_INFO } from 'utils/settings';
 import PwdForm from 'componentUtils/PwdForm';
 import { wandWrapper, fromWei } from 'utils/support';
 import { signTransaction } from 'componentUtils/trezor';
@@ -310,9 +310,8 @@ class DelegateAppendAndExit extends Component {
         wkAddr: record.wkAddr,
       };
       wand.request('storeman_openStoremanAction', { tx, action: 'delegateOut', isEstimateFee: false }, (err, ret) => {
-        console.log('storeman_openStoremanAction', err, ret)
         if (err || (ret && !ret.code)) {
-          if (ret && !ret.code && ret.result.includes('insufficient funds for transfer')) {
+          if (ret && !ret.code && ESTFEE_FAILED_INFO.filter(i => ret.result.includes(i))) {
             message.warn(intl.get('NormalTransForm.insufficientFee'));
           } else {
             message.warn(intl.get('NormalTransForm.estimateGasFailed'));

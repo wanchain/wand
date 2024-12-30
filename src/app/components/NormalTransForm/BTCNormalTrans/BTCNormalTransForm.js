@@ -159,8 +159,12 @@ class BTCNormalTransForm extends Component {
           })
           callback();
         }).catch((e) => {
-          console.log('error:', e);
-          callback(intl.get('NormalTransForm.overBalance'));
+          console.log('checkAmount error:', e);
+          if (e && e.desc) {
+            callback(e.desc);
+          } else {
+            callback(intl.get('NormalTransForm.overBalance'));
+          }
         });
       }
     } else {

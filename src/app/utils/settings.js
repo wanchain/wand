@@ -135,3 +135,5 @@ export const CURRENCY_SYMBOL = {
   usd: '$',
   try: '₺'
 }
+
+export const ESTFEE_FAILED_INFO = ['gas required exceeds allowance', 'insufficient funds for transfer'];

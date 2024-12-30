@@ -6,7 +6,7 @@ import { signTransaction } from 'componentUtils/trezor';
 import { Button, Modal, Form, Icon, message, Spin } from 'antd';
 
 import './index.less';
-import { WALLETID } from 'utils/settings';
+import { WALLETID, ESTFEE_FAILED_INFO } from 'utils/settings';
 import PwdForm from 'componentUtils/PwdForm';
 import { wandWrapper, fromWei } from 'utils/support.js';
 import CommonFormItem from 'componentUtils/CommonFormItem';
@@ -266,9 +266,8 @@ class OsmDelegateClaim extends Component {
     };
     wand.request('storeman_openStoremanAction', { tx, action: ACTION, isEstimateFee: false }, (err, ret) => {
       if (err || (ret && !ret.code)) {
-        message.warn(intl.get('NormalTransForm.estimateGasFailed'));
-        if (ret && !ret.code && ret.result.includes('insufficient funds for transfer')) {
-            message.warn(intl.get('NormalTransForm.insufficientFee'));
+        if (ret && !ret.code && ESTFEE_FAILED_INFO.filter(i => ret.result.includes(i))) {
+          message.warn(intl.get('NormalTransForm.insufficientFee'));
         } else {
           message.warn(intl.get('NormalTransForm.estimateGasFailed'));
         }

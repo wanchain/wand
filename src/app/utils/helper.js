@@ -1028,7 +1028,6 @@ export const btcCoinSelect = function (utxos, value, feeRate) {
   return new Promise((resolve, reject) => {
     wand.request('address_btcCoinSelect', { utxos, value, feeRate }, (err, data) => {
       if (err) {
-        console.log('btcCoinSelect: ', err)
         return reject(err);
       } else {
         return resolve(data);
@@ -1382,11 +1381,7 @@ export const getCrossChainContractData = function (param) {
       if (err) {
         return reject(err);
       } else {
-        if (ret.code) {
-          return resolve(ret);
-        } else {
-          return resolve(false);
-        }
+        return resolve(ret)
       }
     })
   })

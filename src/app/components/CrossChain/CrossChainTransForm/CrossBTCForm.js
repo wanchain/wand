@@ -353,9 +353,14 @@ class CrossBTCForm extends Component {
             return;
           }
           const getFee = await this.getFee(from, value);
-          if (getFee === false) {
-            callback(intl.get('CrossChainTransForm.getNetworkFeeFailed'));
-            return;
+          if (getFee.code === false) {
+            if (getFee.result) {
+              callback(getFee.result);
+              return;
+            } else {
+              callback(intl.get('CrossChainTransForm.getNetworkFeeFailed'));
+              return;
+            }
           }
           const fee = formatNumByDecimals(getFee.result.fee, 8); // user network fee
           this.setState({ fee });
@@ -439,7 +444,6 @@ class CrossBTCForm extends Component {
       };
     }
     let param = direction === INBOUND ? { input, tokenPairID, sourceSymbol: info.fromChainSymbol, sourceAccount: info.fromAccount, destinationSymbol: info.toChainSymbol, destinationAccount: info.toAccount, type: 'LOCK' } : { input, tokenPairID, sourceSymbol: info.toChainSymbol, sourceAccount: info.toAccount, destinationSymbol: info.fromChainSymbol, destinationAccount: info.fromAccount, type: 'LOCK' };
-    console.log('getCrossChainContractData param:', param)
     return getCrossChainContractData(param);
   }
 
@@ -808,6 +812,7 @@ class CrossBTCForm extends Component {
                 prefix={<Icon type="credit-card" className="colorInput" />}
                 title={intl.get('Common.amount')}
               />
+              <div style={{ height: '10px' }}></div>
               <CommonFormItem
                 form={form}
                 colSpan={6}
