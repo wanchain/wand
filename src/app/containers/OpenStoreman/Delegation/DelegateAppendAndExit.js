@@ -342,11 +342,11 @@ class DelegateAppendAndExit extends Component {
     let title = ''
 
     if (modifyType === 'top-up' && record.quited) {
-      title = 'You have already exited, cannot to top up.'
-    } else if (modifyType === 'exit' && !(record.canDelegateOut && !record.quited)) {
-      title = 'You have already exited, no need to exit again.'
-    } else if (modifyType === 'exit' && record.canDelegateClaim) {
       title = 'The delegated WAN assets are in the exit process and cannot be topped up.'
+    } else if (modifyType === 'exit' && record.quited) {
+      title = 'You have already exited, no need to exit again.'
+    } else if (modifyType === 'exit' && !record.quited && !record.canDelegateOut) {
+      title = "Exiting is unavailable during the Storeman group's cycle switch. Please try again later"
     }
 
     return (
